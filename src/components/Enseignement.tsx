@@ -85,7 +85,7 @@ export default function Enseignement() {
                     Secondaire
                   </span>
                   <h3 className="text-lg font-bold text-slate-900">
-                    Collège La Perspicacité
+                    CSP La Perspicacité
                   </h3>
                   <p className="text-emerald-700 font-semibold text-sm mt-0.5">
                     Porto-Novo
