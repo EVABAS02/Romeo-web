@@ -68,7 +68,7 @@ export default function Competences() {
       className="py-28 bg-slate-50 relative overflow-hidden"
     >
       <div
-        className={`transition-all duration-800 ease-out transform ${
+        className={`transition-all duration-700 ease-out transform ${
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
         }`}
       >

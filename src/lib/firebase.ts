@@ -3,13 +3,13 @@ import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDLq5jGpJGbCGP0mEhJcIE-2hR9X-Wk4-g",
-  authDomain: "romeo-site.firebaseapp.com",
-  projectId: "romeo-site",
-  storageBucket: "romeo-site.firebasestorage.app",
-  messagingSenderId: "405633061919",
-  appId: "1:405633061919:web:0d6a1a8ef4dd77d6bf712a",
-  measurementId: "G-PCMX0MK8VK"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
 // Évite la réinitialisation multiple lors du rechargement à chaud de Next.js

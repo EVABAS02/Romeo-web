@@ -41,31 +41,30 @@ export default function Enseignement() {
             <h2 className="text-3xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
               Expérience d&apos;enseignement
             </h2>
-            {/* Trait vert sous le titre */}
             <div className="w-12 h-1 bg-emerald-600 rounded-full mt-4"></div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
             
+            {/* GRANDE CARTE GAUCHE : 2 Établissements Principaux */}
             <div className="lg:col-span-7 bg-white p-8 sm:p-10 rounded-3xl border border-slate-900 shadow-xs flex flex-col justify-between hover:border-emerald-600 transition-all duration-300">
               <div>
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-6">
                   <span className="text-xs font-bold text-white bg-emerald-600 px-4 py-1.5 rounded-full shadow-xs">
-                    Établissement Principal
+                    Établissements Principaux
                   </span>
                   <span className="text-xs font-bold text-slate-700 bg-slate-100 px-3.5 py-1.5 rounded-md">
                     3ème en Terminale
                   </span>
                 </div>
 
-                <h3 className="text-2xl sm:text-3xl font-bold text-slate-900">
-                  Collège Martin Luther King &amp; CEG ZOGBO 
+                <h3 className="text-2xl sm:text-3xl font-bold text-slate-900 leading-tight">
+                  Collège Martin Luther King <br className="hidden sm:inline" /> &amp; CEG Zogbo
                 </h3>
-                <p className="text-emerald-700 font-semibold text-base mt-1">
-                  Mènontin &amp; ZOGBO
+                <p className="text-emerald-700 font-semibold text-base mt-2">
+                  Mènontin &amp; Zogbo
                 </p>
                 
-               
                 <p className="text-slate-600 text-sm sm:text-base leading-relaxed mt-4">
                   Dispensation des cours de mathématiques, suivi approfondi des classes d&apos;examen et préparation rigoureuse aux épreuves nationales.
                 </p>
@@ -77,8 +76,10 @@ export default function Enseignement() {
               </div>
             </div>
 
+            {/* COLONNE DROITE : 2 Cartes */}
             <div className="lg:col-span-5 flex flex-col gap-6 justify-between">
               
+              {/* Card 1 : CSP La Perspicacité */}
               <div className="bg-white p-6 sm:p-7 rounded-3xl border border-slate-900 shadow-xs flex flex-col justify-between hover:border-emerald-600 transition-all duration-300 flex-1">
                 <div>
                   <span className="inline-block text-xs font-bold text-emerald-700 bg-emerald-50 px-3.5 py-1 rounded-full mb-3 border border-emerald-100">
@@ -93,6 +94,7 @@ export default function Enseignement() {
                 </div>
               </div>
 
+              {/* Card 2 : Collège Notre Dame des Apôtres de Dowa */}
               <div className="bg-white p-6 sm:p-7 rounded-3xl border border-slate-900 shadow-xs flex flex-col justify-between hover:border-emerald-600 transition-all duration-300 flex-1">
                 <div>
                   <span className="inline-block text-xs font-bold text-emerald-700 bg-emerald-50 px-3.5 py-1 rounded-full mb-3 border border-emerald-100">
