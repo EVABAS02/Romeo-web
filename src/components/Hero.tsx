@@ -74,35 +74,30 @@ export default function Hero() {
           >
             <div className="relative w-full max-w-md">
 
-              {/*
-                FORMULES MATHÉMATIQUES — Programme 3ème → Terminale C (Bénin)
-                Toutes exactes et au programme officiel
-              */}
-
-              {/* Théorème de Pythagore — 3ème */}
-              <div className="absolute -top-6 -left-6 bg-emerald-600/10 text-emerald-700 font-mono text-sm font-bold px-3 py-1.5 rounded-xl backdrop-blur-xs border border-emerald-200/50 animate-float-1 z-20 shadow-sm">
-                a² + b² = c²
+              {/* 1. Formule de Moivre */}
+              <div className="absolute -top-6 -left-6 bg-emerald-600/10 text-emerald-800 font-mono text-xs sm:text-sm font-bold px-3.5 py-2 rounded-xl backdrop-blur-xs border border-emerald-200/50 animate-float-1 z-20 shadow-sm">
+                (cos x + i sin x)ⁿ = cos(nx) + i sin(nx)
               </div>
 
-              {/* Somme d'une suite arithmétique — Terminale */}
-              <div className="absolute -bottom-4 -right-4 bg-emerald-700 text-white font-mono text-xs font-bold px-3 py-1.5 rounded-xl shadow-md animate-float-2 z-20">
-                Sn = n(a₁ + aₙ) / 2
+              {/* 2. Intégration par parties */}
+              <div className="absolute -bottom-4 -right-4 bg-emerald-700 text-white font-mono text-xs sm:text-sm font-bold px-3.5 py-2 rounded-xl shadow-md animate-float-2 z-20">
+                ∫ u dv = uv − ∫ v du
               </div>
 
-              {/* Identité d'Euler — Terminale C */}
+              {/* 3. Théorème de Bayes */}
               <div
-                className="absolute top-1/2 -right-8 bg-white text-emerald-800 font-mono text-sm font-bold px-3 py-1 rounded-lg shadow-md border border-emerald-100 animate-float-1 z-20"
+                className="absolute top-1/3 -right-8 bg-white text-emerald-800 font-mono text-xs sm:text-sm font-bold px-3.5 py-2 rounded-xl shadow-md border border-emerald-100 animate-float-1 z-20"
                 style={{ animationDelay: '1s' }}
               >
-                eⁱᵖ + 1 = 0
+                P(A|B) = P(B|A) · P(A) / P(B)
               </div>
 
-              {/* Dérivée — Terminale C */}
+              {/* 4. Théorème Fondamental de l'Analyse */}
               <div
-                className="absolute bottom-10 -left-8 bg-emerald-50 text-emerald-700 font-mono text-xs font-semibold px-3 py-1.5 rounded-lg border border-emerald-200/60 shadow-sm animate-float-2 z-20"
+                className="absolute bottom-10 -left-8 bg-emerald-50 text-emerald-800 font-mono text-xs sm:text-sm font-semibold px-3.5 py-2 rounded-xl border border-emerald-200/60 shadow-sm animate-float-2 z-20"
                 style={{ animationDelay: '1.5s' }}
               >
-                f&apos;(x) = lim (f(x+h)−f(x)) / h
+                ∫ₐᵇ f(x) dx = F(b) − F(a)
               </div>
 
               {/* Carte principale de la photo */}
@@ -113,6 +108,7 @@ export default function Hero() {
                     className="object-cover object-top"
                     fill
                     priority
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 450px"
                     src="/images/romeo.webp"
                   />
                 </div>
