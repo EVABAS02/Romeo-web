@@ -1,13 +1,12 @@
 import type { NextConfig } from "next";
 
-// Définition de la politique de sécurité (CSP)
 const cspHeader = `
     default-src 'self';
     script-src 'self' 'unsafe-eval' 'unsafe-inline' https://apis.google.com https://*.firebaseapp.com;
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     img-src 'self' blob: data: https://*.uploadthing.com https://uploadthing.com https://*.googleusercontent.com https://*.firebasestorage.app;
     font-src 'self' https://fonts.gstatic.com data:;
-    connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.uploadthing.com https://uploadthing.com wss://*.firebaseio.com https://*.firebaseapp.com;
+    connect-src 'self' https://apis.google.com https://*.googleapis.com https://firestore.googleapis.com https://*.firebaseio.com https://*.uploadthing.com https://uploadthing.com wss://*.firebaseio.com https://*.firebaseapp.com;
     frame-src 'self' https://*.firebaseapp.com;
     object-src 'none';
     base-uri 'self';
@@ -24,7 +23,8 @@ const nextConfig: NextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === "production",
   },
-  // Configuration des en-têtes HTTP de sécurité
+  // Active les source maps en production pour supprimer le warning de la capture 3
+  productionBrowserSourceMaps: true,
   async headers() {
     return [
       {

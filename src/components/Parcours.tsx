@@ -40,7 +40,7 @@ export default function Parcours() {
             Parcours Académique
           </h2>
           {/* Trait vert sous le titre */}
-          <div className="w-12 h-1 bg-emerald-600 rounded-full mt-4"></div>
+          <div className="w-12 h-1 bg-emerald-700 rounded-full mt-4"></div>
         </div>
 
         {/* Timeline globale */}
@@ -53,19 +53,19 @@ export default function Parcours() {
               <div className="w-8 h-8 rounded-full bg-[#046a4e] border-2 border-white flex items-center justify-center -ml-4 shadow-md shrink-0">
                 <div className="w-3 h-3 rounded-full border-2 border-emerald-300 bg-[#046a4e]" />
               </div>
-              <span className="ml-3 text-xs font-black uppercase tracking-wider text-slate-800">
+              <span className="ml-3 text-xs font-black uppercase tracking-wider text-slate-900">
                 2019 – 2022
               </span>
             </div>
 
             <div className="bg-slate-50/80 border border-slate-200/90 rounded-3xl p-6 sm:p-8 hover:border-emerald-600/30 transition-all shadow-sm">
               <h3 className="text-xl sm:text-2xl font-black text-slate-950 tracking-tight">
-                BAPES <span className="text-sm font-bold text-slate-500">(Brevet d'Aptitude au Professorat)</span>
+                BAPES <span className="text-sm font-bold text-slate-600">(Brevet d'Aptitude au Professorat)</span>
               </h3>
               <p className="text-[#046a4e] font-black text-xs uppercase tracking-wider mt-1">
                 EFFES-SAPIENTIA, Porto-Novo
               </p>
-              <p className="text-slate-600 text-sm leading-relaxed font-bold tracking-tight mt-3">
+              <p className="text-slate-700 text-sm leading-relaxed font-bold tracking-tight mt-3">
                 Admis à l'examen national 2022. Acquisition rigoureuse des fondamentaux de la pédagogie et de la didactique des sciences.
               </p>
             </div>
@@ -78,7 +78,7 @@ export default function Parcours() {
               <div className="w-8 h-8 rounded-full bg-[#046a4e] border-2 border-white flex items-center justify-center -ml-4 shadow-md shrink-0">
                 <div className="w-3 h-3 rounded-full border-2 border-emerald-300 bg-[#046a4e]" />
               </div>
-              <span className="ml-3 text-xs font-black uppercase tracking-wider text-slate-800">
+              <span className="ml-3 text-xs font-black uppercase tracking-wider text-slate-900">
                 2023 – 2025
               </span>
             </div>
@@ -88,12 +88,12 @@ export default function Parcours() {
                 Spécialité : Mathématiques-Informatique
               </span>
               <h3 className="text-xl sm:text-2xl font-black text-slate-950 tracking-tight">
-                CAPES <span className="text-sm font-bold text-slate-500">(Certificat d'Aptitude au Professorat)</span>
+                CAPES <span className="text-sm font-bold text-slate-600">(Certificat d'Aptitude au Professorat)</span>
               </h3>
               <p className="text-[#046a4e] font-black text-xs uppercase tracking-wider mt-1">
                 EFFES-SAPIENTIA, Porto-Novo
               </p>
-              <p className="text-slate-600 text-sm leading-relaxed font-bold tracking-tight mt-3">
+              <p className="text-slate-700 text-sm leading-relaxed font-bold tracking-tight mt-3">
                 Admis à l'examen national 2025. Maîtrise avancée des sciences formelles, de l'ingénierie pédagogique et de la logique mathématique.
               </p>
             </div>
@@ -106,8 +106,8 @@ export default function Parcours() {
               <div className="w-8 h-8 rounded-full bg-[#046a4e] border-2 border-white flex items-center justify-center -ml-4 shadow-md shrink-0">
                 <div className="w-3 h-3 rounded-full border-2 border-emerald-300 bg-[#046a4e]" />
               </div>
-              <span className="ml-3 text-xs font-black uppercase tracking-wider text-slate-800">
-                2022 & 2025
+              <span className="ml-3 text-xs font-black uppercase tracking-wider text-slate-900">
+                2022 &amp; 2025
               </span>
             </div>
 
@@ -121,29 +121,29 @@ export default function Parcours() {
 
               <div className="space-y-4 border-l-2 border-emerald-600/30 pl-4 py-1">
                 <div>
-                  <p className="text-slate-800 font-bold text-sm italic">
+                  <p className="text-slate-900 font-bold text-sm italic">
                     « Remédiation aux difficultés des apprenants sur la propriété de THALÈS et sa réciproque en classe de 3ème »
                   </p>
-                  <p className="text-xs font-black text-slate-500 mt-1">
-                    Direction : CP <strong className="text-slate-900">HOUETO Victor</strong>
+                  <p className="text-xs font-black text-slate-600 mt-1">
+                    Direction : CP <strong className="text-slate-950">HOUETO Victor</strong>
                   </p>
                 </div>
 
                 <div>
-                  <p className="text-slate-800 font-bold text-sm italic">
+                  <p className="text-slate-900 font-bold text-sm italic">
                     « Optimisation de l'Enseignement des Coniques en classe de Tle C »
                   </p>
-                  <p className="text-xs font-black text-slate-500 mt-1">
-                    Direction : Dr <strong className="text-slate-900">Bernardin AHOUNOU</strong>
+                  <p className="text-xs font-black text-slate-600 mt-1">
+                    Direction : Dr <strong className="text-slate-950">Bernardin AHOUNOU</strong>
                   </p>
                 </div>
               </div>
 
               <div className="mt-6 flex flex-wrap gap-2 text-xs font-black">
-                <span className="bg-white border border-slate-200 text-slate-700 px-3 py-1.5 rounded-xl shadow-xs">
+                <span className="bg-white border border-slate-200 text-slate-800 px-3 py-1.5 rounded-xl shadow-xs">
                   CEG Zogbo
                 </span>
-                <span className="bg-white border border-slate-200 text-slate-700 px-3 py-1.5 rounded-xl shadow-xs">
+                <span className="bg-white border border-slate-200 text-slate-800 px-3 py-1.5 rounded-xl shadow-xs">
                   Collège Martin Luther King (Mènontin)
                 </span>
               </div>
