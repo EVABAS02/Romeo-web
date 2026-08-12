@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://ton-domaine.vercel.app/sitemap.xml
+Sitemap: https://romeo-web-gules.vercel.app/
