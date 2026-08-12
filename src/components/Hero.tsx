@@ -82,15 +82,15 @@ export default function Hero() {
               {/* Carte principale de la photo */}
               <div className="relative bg-emerald-50/60 p-6 sm:p-8 rounded-3xl border border-emerald-100/50 w-full z-10 shadow-sm">
                 <div className="relative aspect-[4/5] w-full rounded-2xl overflow-hidden shadow-sm">
-                  <Image
+                 <Image
                     alt="Professeur de Mathématiques"
-                    className="object-cover object-top"
-                    fill
-                    priority
-                    quality={80}
-                    sizes="(max-width: 640px) 280px, (max-width: 1024px) 400px, 450px"
-                    src="/images/romeo.webp"
-                  />
+                      className="object-cover object-top"
+                        fill
+                           priority
+                                quality={85}
+                                  sizes="(max-width: 768px) 90vw, 450px"
+                                     src="/images/romeo.webp"
+                                             />
                 </div>
               </div>
 

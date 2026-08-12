@@ -1,13 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Compression et conversion automatique des images au format Next-Gen (AVIF / WebP)
   images: {
-    formats: ["image/avif", "image/webp"],
-    minimumCacheTTL: 31536000, // Conservation en cache CDN pendant 1 an
+    formats: ["image/webp"], // On reste sur WebP, fluide et instantané
+    minimumCacheTTL: 31536000,
   },
-  
-  // Nettoyage automatique des logs console en production pour soulager le navigateur
   compiler: {
     removeConsole: process.env.NODE_ENV === "production",
   },
