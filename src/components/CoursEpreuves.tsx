@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { db } from "../lib/firebase";
 
@@ -71,6 +71,26 @@ const NIVEAUX_CONFIG = [
 ];
 
 export default function CoursEpreuvesOnglets() {
+  const [isVisible, setIsVisible] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const currentRef = sectionRef.current;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1, rootMargin: '50px' }
+    );
+    if (currentRef) observer.observe(currentRef);
+    return () => {
+      if (currentRef) observer.unobserve(currentRef);
+    };
+  }, []);
+
   const [selectedNiveau, setSelectedNiveau] = useState<string>("3eme");
   const [ressourcesMap, setRessourcesMap] = useState<Record<string, RessourceDoc[]>>({});
   const [loading, setLoading] = useState(true);
@@ -163,8 +183,10 @@ export default function CoursEpreuvesOnglets() {
   const epreuveDocs = currentDocs.filter((d) => d.type !== "cours");
 
   return (
-    <section id="cours-epreuves" className="py-16 sm:py-24 bg-white text-slate-950 scroll-mt-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+    <section id="cours-epreuves" ref={sectionRef} className="py-16 sm:py-24 bg-white text-slate-950 scroll-mt-20">
+      <div className={`max-w-7xl mx-auto px-4 sm:px-6 transition-all duration-700 ease-out transform ${
+        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
+      }`}>
 
         {/* Titre Général & Trait Vert */}
         <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-10 flex flex-col items-center">

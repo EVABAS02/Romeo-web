@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   collection,
   addDoc,
@@ -42,6 +42,26 @@ function StarIcon({
 }
 
 export default function Temoignages() {
+  const [isVisible, setIsVisible] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const currentRef = sectionRef.current;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1, rootMargin: '50px' }
+    );
+    if (currentRef) observer.observe(currentRef);
+    return () => {
+      if (currentRef) observer.unobserve(currentRef);
+    };
+  }, []);
+
   const [temoignages, setTemoignages] = useState<Temoignage[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -144,8 +164,10 @@ export default function Temoignages() {
     : "A";
 
   return (
-    <section id="temoignages" className="py-20 bg-slate-50/50 text-slate-900 relative">
-      <div className="max-w-7xl mx-auto px-6">
+    <section id="temoignages" ref={sectionRef} className="py-20 bg-slate-50/50 text-slate-900 relative">
+      <div className={`max-w-7xl mx-auto px-6 transition-all duration-700 ease-out transform ${
+        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
+      }`}>
         
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
           <div className="space-y-2 max-w-xl">
@@ -231,7 +253,6 @@ export default function Temoignages() {
               </div>
             </div>
 
-            {/* --- LA CORRECTION EST ICI --- */}
             {temoignages.length > 1 && (
               <div className="flex items-center justify-between mt-6 px-2">
                 
@@ -241,7 +262,6 @@ export default function Temoignages() {
                     <button
                       key={idx}
                       onClick={() => setCurrentIndex(idx)}
-                      /* Le padding `p-2` augmente la zone tactile sans grossir le point visuel */
                       className="p-2 cursor-pointer group outline-none"
                       aria-label={`Témoignage ${idx + 1}`}
                     >
@@ -274,14 +294,12 @@ export default function Temoignages() {
 
               </div>
             )}
-            {/* ----------------------------- */}
 
           </div>
         )}
 
       </div>
 
-      {/* Le reste de la modale reste strictement identique à ton code */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in overflow-hidden">
           <div 

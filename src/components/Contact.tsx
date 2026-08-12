@@ -1,10 +1,30 @@
 "use client";
 
-import React, { useState } from "react";
-import { db } from "../lib/firebase"; // Vérifie que le chemin d'accès vers lib/firebase est correct
+import React, { useEffect, useRef, useState } from "react";
+import { db } from "../lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 export default function Contact() {
+  const [isVisible, setIsVisible] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const currentRef = sectionRef.current;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1, rootMargin: '50px' }
+    );
+    if (currentRef) observer.observe(currentRef);
+    return () => {
+      if (currentRef) observer.unobserve(currentRef);
+    };
+  }, []);
+
   // États pour les champs du formulaire[cite: 1]
   const [nom, setNom] = useState("");
   const [email, setEmail] = useState("");
@@ -68,8 +88,10 @@ export default function Contact() {
   };
 
   return (
-    <section id="contact" className="py-28 bg-emerald-800 relative overflow-hidden">
-      <div className="max-w-7xl mx-auto px-6 relative z-10">
+    <section id="contact" ref={sectionRef} className="py-28 bg-emerald-800 relative overflow-hidden">
+      <div className={`max-w-7xl mx-auto px-6 relative z-10 transition-all duration-700 ease-out transform ${
+        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
+      }`}>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-16 items-start">
           

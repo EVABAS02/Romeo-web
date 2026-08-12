@@ -30,7 +30,7 @@ export default function Parcours() {
       className="py-28 bg-white relative overflow-hidden text-slate-950 scroll-mt-20"
     >
       <div
-        className={`max-w-4xl mx-auto px-6 relative z-10 transition-all duration-800 ease-out transform ${
+        className={`max-w-4xl mx-auto px-6 relative z-10 transition-all duration-700 ease-out transform ${
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
         }`}
       >
