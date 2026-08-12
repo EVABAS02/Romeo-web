@@ -7,3 +7,33 @@ html {
 body {
   font-family: var(--font-plus-jakarta), sans-serif;
 }
+
+/* ==========================================================================
+   ANIMATIONS OPTIMISÉES (HERO)
+   ========================================================================== */
+@keyframes floatSlow {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(3deg); }
+}
+
+@keyframes floatFast {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-18px) rotate(-5deg); }
+}
+
+@keyframes fadeInSlide {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-float-1 {
+  animation: floatSlow 6s ease-in-out infinite;
+}
+
+.animate-float-2 {
+  animation: floatFast 4s ease-in-out infinite;
+}
+
+.animate-entrance {
+  animation: fadeInSlide 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

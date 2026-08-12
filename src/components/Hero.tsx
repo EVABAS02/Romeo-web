@@ -4,27 +4,6 @@ import Link from 'next/link';
 export default function Hero() {
   return (
     <section id="accueil" className="pt-8 pb-16 md:pt-16 md:pb-24 relative overflow-hidden">
-      
-      <style>{`
-        @keyframes floatSlow {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-12px) rotate(3deg); }
-        }
-        @keyframes floatFast {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-18px) rotate(-5deg); }
-        }
-        @keyframes fadeInSlide {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-float-1 { animation: floatSlow 6s ease-in-out infinite; }
-        .animate-float-2 { animation: floatFast 4s ease-in-out infinite; }
-        .animate-entrance {
-          animation: fadeInSlide 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-      `}</style>
-
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
           
@@ -108,7 +87,8 @@ export default function Hero() {
                     className="object-cover object-top"
                     fill
                     priority
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 450px"
+                    quality={80}
+                    sizes="(max-width: 640px) 280px, (max-width: 1024px) 400px, 450px"
                     src="/images/romeo.webp"
                   />
                 </div>
