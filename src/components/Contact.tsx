@@ -25,14 +25,12 @@ export default function Contact() {
     };
   }, []);
 
-  // États pour les champs du formulaire[cite: 1]
   const [nom, setNom] = useState("");
   const [email, setEmail] = useState("");
   const [sujet, setSujet] = useState("");
   const [autreSujet, setAutreSujet] = useState("");
   const [message, setMessage] = useState("");
 
-  // États pour le chargement et les retours d'envoi[cite: 1]
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{
     type: "success" | "error" | null;
@@ -44,24 +42,21 @@ export default function Contact() {
     setLoading(true);
     setStatus({ type: null, text: "" });
 
-    // Si "autre" est choisi, on prend la valeur renseignée dans le champ texte[cite: 1]
     const sujetFinal = sujet === "autre" ? autreSujet : sujet;
 
     try {
-      // 1. ÉTAPE 2 : Créer le fil de discussion dans "conversations"
       const convRef = await addDoc(collection(db, "conversations"), {
         nom,
         email,
         sujet: sujetFinal,
         lastMessage: message,
         updatedAt: serverTimestamp(),
-        read: false, // Marqué comme non lu pour ton Dashboard
+        read: false,
       });
 
-      // 2. ÉTAPE 2 : Ajouter le tout premier message dans la sous-collection "messages"
       await addDoc(collection(db, "conversations", convRef.id, "messages"), {
         text: message,
-        sender: "client", // Indique que c'est le visiteur qui t'écrit
+        sender: "client",
         createdAt: serverTimestamp(),
       });
 
@@ -70,7 +65,6 @@ export default function Contact() {
         text: "Votre message a bien été envoyé ! Merci.",
       });
 
-      // Réinitialisation des champs après envoi réussi[cite: 1]
       setNom("");
       setEmail("");
       setSujet("");
@@ -95,7 +89,6 @@ export default function Contact() {
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-16 items-start">
           
-          {/* Colonne gauche : Textes et Coordonnées */}
           <div className="space-y-12 lg:pr-4 pt-2">
             
             <div className="space-y-6">
@@ -109,7 +102,6 @@ export default function Contact() {
 
             <div className="space-y-6">
               
-              {/* Localisation */}
               <div className="flex items-center gap-5 group">
                 <div className="w-14 h-14 rounded-xl bg-emerald-700/80 flex items-center justify-center shrink-0 border border-emerald-600/60 shadow-md group-hover:bg-emerald-700 transition-colors">
                   <svg className="w-6 h-6 text-emerald-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -123,7 +115,6 @@ export default function Contact() {
                 </div>
               </div>
 
-              {/* Email */}
               <div className="flex items-center gap-5 group">
                 <div className="w-14 h-14 rounded-xl bg-emerald-700/80 flex items-center justify-center shrink-0 border border-emerald-600/60 shadow-md group-hover:bg-emerald-700 transition-colors">
                   <svg className="w-6 h-6 text-emerald-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -138,7 +129,6 @@ export default function Contact() {
                 </div>
               </div>
 
-              {/* Téléphone */}
               <div className="flex items-center gap-5 group">
                 <div className="w-14 h-14 rounded-xl bg-emerald-700/80 flex items-center justify-center shrink-0 border border-emerald-600/60 shadow-md group-hover:bg-emerald-700 transition-colors">
                   <svg className="w-6 h-6 text-emerald-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -151,7 +141,6 @@ export default function Contact() {
                 </div>
               </div>
 
-              {/* WhatsApp */}
               <div className="flex items-center gap-5 group">
                 <div className="w-14 h-14 rounded-xl bg-emerald-700/80 flex items-center justify-center shrink-0 border border-emerald-600/60 shadow-md group-hover:bg-emerald-700 transition-colors">
                   <svg className="w-7 h-7 text-emerald-100" fill="currentColor" viewBox="0 0 24 24">
@@ -169,7 +158,6 @@ export default function Contact() {
             </div>
           </div>
 
-          {/* Colonne droite : Formulaire */}
           <form onSubmit={handleSubmit} className="bg-white p-8 sm:p-12 rounded-none shadow-2xl border border-slate-100 space-y-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
               <div>
@@ -178,6 +166,7 @@ export default function Contact() {
                   type="text" 
                   id="name" 
                   required
+                  maxLength={100}
                   value={nom}
                   onChange={(e) => setNom(e.target.value)}
                   placeholder="Votre nom" 
@@ -191,6 +180,7 @@ export default function Contact() {
                   type="email" 
                   id="email" 
                   required
+                  maxLength={100}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="votre@email.com" 
@@ -199,7 +189,6 @@ export default function Contact() {
               </div>
             </div>
 
-            {/* Objet et champ Autre */}
             <div>
               <label htmlFor="subject" className="block text-sm font-bold text-slate-900 mb-2">Objet</label>
               <select 
@@ -222,6 +211,7 @@ export default function Contact() {
                     type="text" 
                     id="custom-subject" 
                     required
+                    maxLength={100}
                     value={autreSujet}
                     onChange={(e) => setAutreSujet(e.target.value)}
                     placeholder="Veuillez préciser votre objet..." 
@@ -238,6 +228,7 @@ export default function Contact() {
                 id="message" 
                 required
                 rows={4} 
+                maxLength={2000}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Votre message..." 
@@ -245,7 +236,6 @@ export default function Contact() {
               ></textarea>
             </div>
 
-            {/* Message d'état (Succès / Erreur) */}
             {status.text && (
               <div
                 className={`p-4 text-sm font-semibold ${
@@ -258,7 +248,6 @@ export default function Contact() {
               </div>
             )}
 
-            {/* Bouton "Envoyer le message" */}
             <button 
               type="submit" 
               disabled={loading}

@@ -1,7 +1,15 @@
 import { NextResponse } from "next/server";
 
-
 export async function POST(req: Request) {
+  // 🔒 Sécurité : Vérification du jeton d'autorisation Secret
+  const authHeader = req.headers.get("authorization");
+  if (!authHeader || authHeader !== `Bearer ${process.env.ADMIN_API_SECRET}`) {
+    return NextResponse.json(
+      { error: "Non autorisé" },
+      { status: 401 }
+    );
+  }
+
   try {
     const { to, subject, replyText, recipientName } = await req.json();
 
@@ -24,7 +32,7 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         sender: {
           name: "Édouard R. Azon",
-          email: "romeoazon12@gmail.com", // ⚠️ Laisse bien l'email avec lequel tu as créé ton compte Brevo
+          email: "romeoazon12@gmail.com",
         },
         to: [
           {

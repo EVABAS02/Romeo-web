@@ -121,13 +121,14 @@ export default function Temoignages() {
         year: "numeric",
       });
 
+      // ⚠️ statut à "pending" pour correspondre à la règle de sécurité Firestore
       await addDoc(collection(db, "temoignages"), {
         nom: nom.trim(),
         role,
         message: message.trim(),
         note,
         date: today,
-        statut: "approuve",
+        statut: "pending",
         createdAt: serverTimestamp(),
       });
 
@@ -135,7 +136,6 @@ export default function Temoignages() {
       setNom("");
       setMessage("");
       setNote(5);
-      await loadTemoignages();
     } catch (error) {
       console.error("Erreur lors de l'envoi du témoignage :", error);
       setErrorMessage("Une erreur est survenue lors de l'envoi. Veuillez réessayer.");
@@ -255,8 +255,6 @@ export default function Temoignages() {
 
             {temoignages.length > 1 && (
               <div className="flex items-center justify-between mt-6 px-2">
-                
-                {/* Puces avec "Padding Invisible" pour agrandir la zone cliquable */}
                 <div className="flex items-center gap-1">
                   {temoignages.map((_, idx) => (
                     <button
@@ -274,7 +272,6 @@ export default function Temoignages() {
                   ))}
                 </div>
 
-                {/* Boutons Flèches agrandis (w-12 h-12 et texte plus grand) */}
                 <div className="flex items-center gap-3">
                   <button
                     onClick={prevSlide}
@@ -339,7 +336,7 @@ export default function Temoignages() {
                 </div>
                 <h4 className="font-bold text-white text-base">Témoignage envoyé !</h4>
                 <p className="text-xs text-slate-200 max-w-xs mx-auto leading-relaxed">
-                  Merci pour votre retour, votre témoignage est désormais enregistré.
+                  Merci pour votre retour, votre témoignage est désormais enregistré et en attente de validation.
                 </p>
                 <button
                   onClick={closeModal}
@@ -357,6 +354,7 @@ export default function Temoignages() {
                   <input
                     type="text"
                     required
+                    maxLength={100}
                     value={nom}
                     onChange={(e) => setNom(e.target.value)}
                     placeholder="Votre nom"
@@ -416,6 +414,7 @@ export default function Temoignages() {
                   <textarea
                     required
                     rows={3}
+                    maxLength={2000}
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder="Votre message..."
