@@ -12,6 +12,7 @@ import {
   updateDoc,
   deleteDoc,
   serverTimestamp,
+  Timestamp,
 } from "firebase/firestore";
 import { Conversation, MessageItem } from "../../types/chat";
 
@@ -56,15 +57,19 @@ export default function MessagesChat({ selectedConvId, onSelectConv }: MessagesC
 
       setConversations(convs);
 
-      if (selectedConvId) {
-        const found = convs.find((c) => c.id === selectedConvId);
-        if (found) setSelectedConv(found);
-      } else if (convs.length > 0 && !selectedConv) {
-        setSelectedConv(convs[0]);
-      } else if (selectedConv) {
-        const updated = convs.find((c) => c.id === selectedConv.id);
-        if (updated) setSelectedConv(updated);
-      }
+      // Mise à jour fonctionnelle de l'état pour éviter l'avertissement de dépendance ESLint
+      setSelectedConv((prevSelected) => {
+        if (selectedConvId) {
+          return convs.find((c) => c.id === selectedConvId) || prevSelected;
+        }
+        if (convs.length > 0 && !prevSelected) {
+          return convs[0];
+        }
+        if (prevSelected) {
+          return convs.find((c) => c.id === prevSelected.id) || prevSelected;
+        }
+        return prevSelected;
+      });
     });
 
     return () => unsubscribe();
@@ -96,7 +101,7 @@ export default function MessagesChat({ selectedConvId, onSelectConv }: MessagesC
     });
 
     return () => unsubscribe();
-  }, [selectedConv?.id]);
+  }, [selectedConv?.id, selectedConv?.read]);
 
   const handleSelect = (conv: Conversation) => {
     setSelectedConv(conv);
@@ -127,10 +132,13 @@ export default function MessagesChat({ selectedConvId, onSelectConv }: MessagesC
         updatedAt: serverTimestamp(),
       });
 
-      // API Brevo
+      // API Brevo avec Token Admin
       await fetch("/api/send-reply", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${process.env.NEXT_PUBLIC_ADMIN_API_SECRET}`
+        },
         body: JSON.stringify({
           conversationId: selectedConv.id,
           to: selectedConv.email,
@@ -173,9 +181,11 @@ export default function MessagesChat({ selectedConvId, onSelectConv }: MessagesC
     }
   };
 
-  const formatTime = (timestamp: any) => {
+  const formatTime = (timestamp: Timestamp | Date | number | string | null | undefined) => {
     if (!timestamp) return "";
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const date = (timestamp as Timestamp).toDate 
+      ? (timestamp as Timestamp).toDate() 
+      : new Date(timestamp as string | number | Date);
     return date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
   };
 
@@ -208,7 +218,7 @@ export default function MessagesChat({ selectedConvId, onSelectConv }: MessagesC
                     {conv.nom}
                   </span>
                   {!conv.read && (
-                    <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full flex-shrink-0"></span>
+                    <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full shrink-0"></span>
                   )}
                 </div>
                 <span className="text-xs font-semibold text-emerald-700 truncate">
@@ -249,7 +259,7 @@ export default function MessagesChat({ selectedConvId, onSelectConv }: MessagesC
           <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/20">
             {messages.map((msg, index) => {
               const isAdmin = msg.sender === "admin";
-              const isEditing = editingMsgId === msg.id;
+              const isEditing = msg.id ? editingMsgId === msg.id : false;
 
               return (
                 <div
@@ -264,7 +274,7 @@ export default function MessagesChat({ selectedConvId, onSelectConv }: MessagesC
                       <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                         <button
                           onClick={() => {
-                            setEditingMsgId(msg.id);
+                            setEditingMsgId(msg.id ?? null);
                             setEditText(msg.text);
                           }}
                           className="text-slate-400 hover:text-emerald-600 p-1 text-xs"
@@ -273,7 +283,7 @@ export default function MessagesChat({ selectedConvId, onSelectConv }: MessagesC
                           ✏️
                         </button>
                         <button
-                          onClick={() => handleDeleteMessage(msg.id)}
+                          onClick={() => msg.id && handleDeleteMessage(msg.id)}
                           className="text-slate-400 hover:text-red-600 p-1 text-xs"
                           title="Supprimer"
                         >
@@ -306,7 +316,7 @@ export default function MessagesChat({ selectedConvId, onSelectConv }: MessagesC
                               Annuler
                             </button>
                             <button
-                              onClick={() => handleSaveEdit(msg.id)}
+                              onClick={() => msg.id && handleSaveEdit(msg.id)}
                               className="bg-white text-emerald-800 px-2 py-0.5 rounded font-bold"
                             >
                               Valider
