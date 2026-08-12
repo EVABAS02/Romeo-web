@@ -5,10 +5,11 @@ import "./globals.css";
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta",
   subsets: ["latin"],
+  display: "swap", // Optimisation : évite le blocage de rendu des polices (FCP)
 });
 
 export const metadata: Metadata = {
-  title: "Edouard Roméo AZON — Professeur certifié de Mathématiques à Porto-Novo, Bénin",
+  title: "Edouard Roméo AZON — Professeur certifié de Mathématiques ",
   description: "Site officiel d'Edouard Roméo AZON, professeur certifié de mathématiques (CAPES & BAPES) à Porto-Novo, Bénin. Cours particuliers du collège au lycée.",
 };
 

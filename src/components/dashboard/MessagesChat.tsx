@@ -57,7 +57,6 @@ export default function MessagesChat({ selectedConvId, onSelectConv }: MessagesC
 
       setConversations(convs);
 
-      // Mise à jour fonctionnelle de l'état pour éviter l'avertissement de dépendance ESLint
       setSelectedConv((prevSelected) => {
         if (selectedConvId) {
           return convs.find((c) => c.id === selectedConvId) || prevSelected;
