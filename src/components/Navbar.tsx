@@ -32,14 +32,14 @@ export default function Navbar() {
           Edouard <span className="text-emerald-600">Roméo</span>
         </Link>
 
-        {/* Navigation Desktop (Centrée de façon absolue) */}
-        <nav className="hidden lg:flex items-center space-x-5 xl:space-x-7 absolute left-1/2 transform -translate-x-1/2">
+        {/* Navigation Desktop (Centrée de façon absolue avec espacement optimisé) */}
+        <nav className="hidden lg:flex items-center space-x-2.5 xl:space-x-6 absolute left-1/2 transform -translate-x-1/2">
           {navLinks.map((link) => (
             <Link
               key={link.name}
               href={link.href}
               onClick={() => setActiveLink(link.href)}
-              className={`relative text-xs xl:text-sm font-medium py-2 transition-colors duration-200 whitespace-nowrap group ${
+              className={`relative text-[11px] xl:text-sm font-medium py-2 transition-colors duration-200 whitespace-nowrap group ${
                 activeLink === link.href ? 'text-emerald-600' : 'text-slate-600 hover:text-emerald-600'
               }`}
             >

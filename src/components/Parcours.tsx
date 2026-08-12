@@ -107,7 +107,7 @@ export default function Parcours() {
                 <div className="w-3 h-3 rounded-full border-2 border-emerald-300 bg-[#046a4e]" />
               </div>
               <span className="ml-3 text-xs font-black uppercase tracking-wider text-slate-800">
-                2022 - 2025
+                2022 & 2025
               </span>
             </div>
 
