@@ -45,7 +45,15 @@ export async function POST(req: Request) {
           <div style="font-family: sans-serif; padding: 20px; color: #333;">
             <p>Bonjour <strong>${recipientName || ""}</strong>,</p>
             <p style="font-size: 15px; line-height: 1.6; background-color: #f4f5f9; padding: 15px; border-radius: 10px;">
-              ${replyText.replace(/\n/g, "<br/>")}
+             ${replyText
+                  .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#x27;")
+                    .replace(/\n/g, "<br/>")
+   }
+
             </p>
             <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
             <p style="font-size: 12px; color: #888;">

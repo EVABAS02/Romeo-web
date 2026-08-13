@@ -45,7 +45,17 @@ export default function Temoignages() {
   const [isVisible, setIsVisible] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
 
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+
   useEffect(() => {
+    // Vérification anti-doublon dans localStorage au montage
+    if (typeof window !== "undefined") {
+      const alreadySubmitted = localStorage.getItem("temoignage_submitted");
+      if (alreadySubmitted) {
+        setHasSubmitted(true);
+      }
+    }
+
     const currentRef = sectionRef.current;
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -121,7 +131,6 @@ export default function Temoignages() {
         year: "numeric",
       });
 
-      // ⚠️ statut à "pending" pour correspondre à la règle de sécurité Firestore
       await addDoc(collection(db, "temoignages"), {
         nom: nom.trim(),
         role,
@@ -132,6 +141,9 @@ export default function Temoignages() {
         createdAt: serverTimestamp(),
       });
 
+      // Stockage dans localStorage pour la protection anti-doublon
+      localStorage.setItem("temoignage_submitted", "true");
+      setHasSubmitted(true);
       setSubmittedSuccess(true);
       setNom("");
       setMessage("");
@@ -238,9 +250,9 @@ export default function Temoignages() {
                     {initials}
                   </div>
                   <div>
-                    <h4 className="font-bold text-slate-900 text-sm leading-tight">
+                    <h3 className="font-bold text-slate-900 text-sm leading-tight">
                       {currentItem?.nom}
-                    </h4>
+                    </h3>
                     <p className="text-[11px] text-slate-500 font-medium mt-0.5">
                       {currentItem?.role}
                     </p>
@@ -319,24 +331,15 @@ export default function Temoignages() {
             <h3 className="text-2xl font-black text-white mb-1 tracking-tight text-center">
               Laissez votre témoignage
             </h3>
-            <p className="text-xs text-slate-200/80 mb-6 text-center leading-relaxed">
-              Votre message sera vérifié et validé par M. Azon avant sa publication.
-            </p>
 
-            {errorMessage && (
-              <div className="mb-4 p-3 rounded-none bg-red-500/30 text-red-100 text-xs font-medium border border-red-400/30 backdrop-blur-sm">
-                {errorMessage}
-              </div>
-            )}
-
-            {submittedSuccess ? (
+            {hasSubmitted ? (
               <div className="py-8 text-center space-y-4">
                 <div className="w-14 h-14 bg-emerald-400/20 text-emerald-300 border border-emerald-400/30 rounded-none flex items-center justify-center mx-auto text-2xl font-bold backdrop-blur-sm">
                   ✓
                 </div>
-                <h4 className="font-bold text-white text-base">Témoignage envoyé !</h4>
+                <h4 className="font-bold text-white text-base">Merci pour votre témoignage !</h4>
                 <p className="text-xs text-slate-200 max-w-xs mx-auto leading-relaxed">
-                  Merci pour votre retour, votre témoignage est désormais enregistré et en attente de validation.
+                  Vous avez déjà soumis un témoignage. Il est en cours de modération avant publication.
                 </p>
                 <button
                   onClick={closeModal}
@@ -346,99 +349,129 @@ export default function Temoignages() {
                 </button>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                  <label className="block text-xs font-bold text-slate-100 mb-1">
-                    Votre Nom complet 
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    maxLength={100}
-                    value={nom}
-                    onChange={(e) => setNom(e.target.value)}
-                    placeholder="Votre nom"
-                    className="w-full px-1 py-2.5 bg-transparent border-b border-white/30 text-xs text-white placeholder-slate-300/50 outline-none focus:border-emerald-400 transition-all rounded-none"
-                  />
-                </div>
+              <>
+                <p className="text-xs text-slate-200/80 mb-6 text-center leading-relaxed">
+                  Votre message sera vérifié et validé par M. Azon avant sa publication.
+                </p>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-100 mb-1">
-                    Vous êtes 
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={role}
-                      onChange={(e) =>
-                        setRole(e.target.value as "Parent" | "Élève" | "Collègue")
-                      }
-                      className="w-full px-1 py-2.5 bg-transparent border-b border-white/30 text-xs text-white outline-none focus:border-emerald-400 transition-all appearance-none cursor-pointer rounded-none"
-                    >
-                      <option value="Élève" className="bg-slate-900 text-white">Élève</option>
-                      <option value="Parent" className="bg-slate-900 text-white">Parent d'élève</option>
-                      <option value="Collègue" className="bg-slate-900 text-white">Collègue enseignant</option>
-                    </select>
-                    <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300 text-xs">
-                      ▼
+                {errorMessage && (
+                  <div className="mb-4 p-3 rounded-none bg-red-500/30 text-red-100 text-xs font-medium border border-red-400/30 backdrop-blur-sm">
+                    {errorMessage}
+                  </div>
+                )}
+
+                {submittedSuccess ? (
+                  <div className="py-8 text-center space-y-4">
+                    <div className="w-14 h-14 bg-emerald-400/20 text-emerald-300 border border-emerald-400/30 rounded-none flex items-center justify-center mx-auto text-2xl font-bold backdrop-blur-sm">
+                      ✓
                     </div>
+                    <h4 className="font-bold text-white text-base">Témoignage envoyé !</h4>
+                    <p className="text-xs text-slate-200 max-w-xs mx-auto leading-relaxed">
+                      Merci pour votre retour, votre témoignage est désormais enregistré et en attente de validation.
+                    </p>
+                    <button
+                      onClick={closeModal}
+                      className="bg-white hover:bg-slate-100 text-slate-950 font-bold text-xs px-6 py-3 rounded-full transition-all shadow-lg cursor-pointer"
+                    >
+                      Fermer la fenêtre
+                    </button>
                   </div>
-                </div>
+                ) : (
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-100 mb-1">
+                        Votre Nom complet 
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        maxLength={100}
+                        value={nom}
+                        onChange={(e) => setNom(e.target.value)}
+                        placeholder="Votre nom"
+                        className="w-full px-1 py-2.5 bg-transparent border-b border-white/30 text-xs text-white placeholder-slate-300/50 outline-none focus:border-emerald-400 transition-all rounded-none"
+                      />
+                    </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-100 mb-2">
-                    Note globale
-                  </label>
-                  <div className="flex items-center gap-1.5">
-                    {[1, 2, 3, 4, 5].map((star) => (
+                    <div>
+                      <label className="block text-xs font-bold text-slate-100 mb-1">
+                        Vous êtes 
+                      </label>
+                      <div className="relative">
+                        <select
+                          value={role}
+                          onChange={(e) =>
+                            setRole(e.target.value as "Parent" | "Élève" | "Collègue")
+                          }
+                          className="w-full px-1 py-2.5 bg-transparent border-b border-white/30 text-xs text-white outline-none focus:border-emerald-400 transition-all appearance-none cursor-pointer rounded-none"
+                        >
+                          <option value="Élève" className="bg-slate-900 text-white">Élève</option>
+                          <option value="Parent" className="bg-slate-900 text-white">Parent d'élève</option>
+                          <option value="Collègue" className="bg-slate-900 text-white">Collègue enseignant</option>
+                        </select>
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300 text-xs">
+                          ▼
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-100 mb-2">
+                        Note globale
+                      </label>
+                      <div className="flex items-center gap-1.5">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => setNote(star)}
+                            onMouseEnter={() => setHoverNote(star)}
+                            onMouseLeave={() => setHoverNote(null)}
+                            className="p-0.5 transition-transform hover:scale-110 cursor-pointer outline-none"
+                          >
+                            <StarIcon
+                              filled={star <= (hoverNote ?? note)}
+                              className="w-6 h-6"
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-100 mb-1">
+                        Votre Message 
+                      </label>
+                      <textarea
+                        required
+                        rows={3}
+                        maxLength={2000}
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        placeholder="Votre message..."
+                        className="w-full px-1 py-2.5 bg-transparent border-b border-white/30 text-xs text-white placeholder-slate-300/50 outline-none focus:border-emerald-400 transition-all resize-none rounded-none"
+                      />
+                    </div>
+
+                    <div className="pt-2">
                       <button
-                        key={star}
-                        type="button"
-                        onClick={() => setNote(star)}
-                        onMouseEnter={() => setHoverNote(star)}
-                        onMouseLeave={() => setHoverNote(null)}
-                        className="p-0.5 transition-transform hover:scale-110 cursor-pointer outline-none"
+                        type="submit"
+                        disabled={submitting}
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-6 rounded-full text-xs sm:text-sm transition-all shadow-lg active:scale-[0.98] disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
                       >
-                        <StarIcon
-                          filled={star <= (hoverNote ?? note)}
-                          className="w-6 h-6"
-                        />
+                        {submitting ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            Envoi en cours...
+                          </>
+                        ) : (
+                          "Envoyer mon témoignage"
+                        )}
                       </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-100 mb-1">
-                    Votre Message 
-                  </label>
-                  <textarea
-                    required
-                    rows={3}
-                    maxLength={2000}
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Votre message..."
-                    className="w-full px-1 py-2.5 bg-transparent border-b border-white/30 text-xs text-white placeholder-slate-300/50 outline-none focus:border-emerald-400 transition-all resize-none rounded-none"
-                  />
-                </div>
-
-                <div className="pt-2">
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-6 rounded-full text-xs sm:text-sm transition-all shadow-lg active:scale-[0.98] disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
-                  >
-                    {submitting ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Envoi en cours...
-                      </>
-                    ) : (
-                      "Envoyer mon témoignage"
-                    )}
-                  </button>
-                </div>
-              </form>
+                    </div>
+                  </form>
+                )}
+              </>
             )}
           </div>
         </div>

@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Menu, X } from 'lucide-react';
 
@@ -19,6 +19,41 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [activeLink, setActiveLink] = useState('#accueil');
 
+  useEffect(() => {
+    // 1. Récupérer toutes les sections présentes sur la page grâce à leurs IDs
+    const sectionIds = navLinks.map((link) => link.href.replace('#', ''));
+    const sections = sectionIds
+      .map((id) => document.getElementById(id))
+      .filter((el): el is HTMLElement => el !== null);
+
+    if (sections.length === 0) return;
+
+    // 2. Créer l'IntersectionObserver
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            // Mettre à jour le lien actif avec l'ID de la section visible
+            setActiveLink(`#${entry.target.id}`);
+          }
+        });
+      },
+      {
+        // Ajustement fin de la zone de détection (très important pour les headers sticky)
+        rootMargin: '-20% 0px -50% 0px',
+        threshold: 0.1,
+      }
+    );
+
+    // 3. Observer chaque section
+    sections.forEach((section) => observer.observe(section));
+
+    // 4. Nettoyage lors du démontage du composant
+    return () => {
+      sections.forEach((section) => observer.unobserve(section));
+    };
+  }, []);
+
   return (
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-100">
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between relative">
@@ -32,7 +67,7 @@ export default function Navbar() {
           Edouard <span className="text-emerald-600">Roméo</span>
         </Link>
 
-        {/* Navigation Desktop (Centrée de façon absolue avec espacement optimisé) */}
+        {/* Navigation Desktop */}
         <nav className="hidden lg:flex items-center space-x-2.5 xl:space-x-6 absolute left-1/2 transform -translate-x-1/2">
           {navLinks.map((link) => (
             <Link
@@ -44,7 +79,6 @@ export default function Navbar() {
               }`}
             >
               {link.name}
-              {/* Soulignement animé */}
               <span
                 className={`absolute left-0 bottom-0 h-0.5 bg-emerald-600 transition-all duration-300 ${
                   activeLink === link.href ? 'w-full' : 'w-0 group-hover:w-full'
