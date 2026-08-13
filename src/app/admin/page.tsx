@@ -44,7 +44,7 @@ export default function AdminLogin() {
       {/* Motifs géométriques mathématiques décoratifs en SVG */}
       <svg className="absolute inset-0 w-full h-full opacity-10 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
         <pattern id="math-pattern" width="120" height="120" patternUnits="userSpaceOnUse">
-          <text x="10" y="30" fill="white" fontSize="16" fontFamily="serif" italic="true">f(x) = ∫ e^x dx</text>
+          <text x="10" y="30" fill="white" fontSize="16" fontFamily="serif" fontStyle="italic">f(x) = ∫ e^x dx</text>
           <text x="10" y="70" fill="white" fontSize="14" fontFamily="serif">lim (x→∞)</text>
           <text x="10" y="105" fill="white" fontSize="15" fontFamily="serif">E = mc²</text>
           <text x="70" y="50" fill="white" fontSize="18" fontFamily="serif">∑</text>
