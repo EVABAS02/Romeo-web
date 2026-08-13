@@ -2,8 +2,6 @@ import type { NextConfig } from "next";
 
 const isDev = process.env.NODE_ENV !== "production";
 
-// Content Security Policy
-// 'unsafe-eval' est activé en local pour le dev React/Turbopack, et supprimé en production pour la sécurité
 const cspHeader = `
     default-src 'self';
     script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : ""} https://apis.google.com https://*.firebaseapp.com;
@@ -27,7 +25,8 @@ const nextConfig: NextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === "production",
   },
-  productionBrowserSourceMaps: true,
+  // Désactivé pour protéger le code source en production
+  productionBrowserSourceMaps: false,
   async headers() {
     return [
       {

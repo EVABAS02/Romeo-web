@@ -1,4 +1,4 @@
-// types/chat.ts
+import { Timestamp } from 'firebase/firestore';
 
 // Structure d'une conversation dans la collection "conversations"
 export interface Conversation {
@@ -7,7 +7,7 @@ export interface Conversation {
   email: string;
   sujet: string;
   lastMessage: string;
-  updatedAt: any;
+  updatedAt: Timestamp;
   read: boolean;
 }
 
@@ -16,5 +16,5 @@ export interface MessageItem {
   id?: string;
   text: string;
   sender: "client" | "admin";
-  createdAt: any;
+  createdAt: Timestamp;
 }
