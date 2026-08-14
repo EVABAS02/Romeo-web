@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from "react";
 
 export default function Parcours() {
   const [isVisible, setIsVisible] = useState(false);
@@ -8,6 +8,7 @@ export default function Parcours() {
 
   useEffect(() => {
     const currentRef = sectionRef.current;
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -15,11 +16,20 @@ export default function Parcours() {
           observer.disconnect();
         }
       },
-      { threshold: 0.1, rootMargin: '50px' }
+      {
+        threshold: 0.1,
+        rootMargin: "50px",
+      }
     );
-    if (currentRef) observer.observe(currentRef);
+
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
     return () => {
-      if (currentRef) observer.unobserve(currentRef);
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
     };
   }, []);
 
@@ -27,123 +37,159 @@ export default function Parcours() {
     <section
       ref={sectionRef}
       id="parcours"
-      className="py-28 bg-white relative overflow-hidden text-slate-950 scroll-mt-20"
+      className="relative overflow-hidden bg-white py-20 text-slate-950 sm:py-24 lg:py-28"
     >
       <div
-        className={`max-w-4xl mx-auto px-6 relative z-10 transition-all duration-700 ease-out transform ${
-          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
+        className={`mx-auto max-w-5xl px-6 transition-all duration-700 ease-out ${
+          isVisible
+            ? "translate-y-0 opacity-100"
+            : "translate-y-12 opacity-0"
         }`}
       >
-        {/* Titre & Trait Vert */}
-        <div className="text-center max-w-xl mx-auto mb-20 flex flex-col items-center">
-          <h2 className="text-3xl sm:text-3xl font-black text-slate-950 tracking-tighter">
+        {/* Titre */}
+        <div className="mx-auto mb-16 flex max-w-xl flex-col items-center text-center sm:mb-20">
+          <h2 className="text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
             Parcours Académique
           </h2>
-          {/* Trait vert sous le titre */}
-          <div className="w-12 h-1 bg-emerald-700 rounded-full mt-4"></div>
+
+          <div className="mt-4 h-1 w-14 rounded-full bg-emerald-600" />
         </div>
 
-        {/* Timeline globale */}
-        <div className="relative pl-6 sm:pl-10 border-l-2 border-slate-200 space-y-16 ml-4 sm:ml-8">
+        {/* Timeline */}
+        <div className="relative ml-2 border-l-2 border-slate-200 pl-7 sm:ml-6 sm:pl-10">
 
           {/* ÉTAPE 1 : BAPES */}
-          <div className="relative group">
-            {/* Badge style Pill + Ring */}
-            <div className="inline-flex items-center bg-slate-100 rounded-full pl-2 pr-6 py-1.5 shadow-sm border border-slate-200/80 mb-4">
-              <div className="w-8 h-8 rounded-full bg-[#046a4e] border-2 border-white flex items-center justify-center -ml-4 shadow-md shrink-0">
-                <div className="w-3 h-3 rounded-full border-2 border-emerald-300 bg-[#046a4e]" />
-              </div>
-              <span className="ml-3 text-xs font-black uppercase tracking-wider text-slate-900">
-                2019 – 2022
-              </span>
+          <div className="relative pb-14 sm:pb-16">
+            {/* Point timeline */}
+            <div className="absolute -left-[42px] top-1 flex h-5 w-5 items-center justify-center rounded-full border-4 border-white bg-emerald-700 shadow-[0_0_0_4px_rgba(16,185,129,0.10)] sm:-left-[52px]">
+              <div className="h-1.5 w-1.5 rounded-full bg-white" />
             </div>
 
-            <div className="bg-slate-50/80 border border-slate-200/90 rounded-3xl p-6 sm:p-8 hover:border-emerald-600/30 transition-all shadow-sm">
-              <h3 className="text-xl sm:text-2xl font-black text-slate-950 tracking-tight">
-                BAPES <span className="text-sm font-bold text-slate-600">(Brevet d'Aptitude au Professorat)</span>
+            {/* Date */}
+            <div className="mb-4 inline-flex rounded-full border border-slate-200 bg-slate-50 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-slate-900">
+              2019 – 2022
+            </div>
+
+            {/* Carte */}
+            <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-6 shadow-[0_15px_35px_-28px_rgba(15,23,42,0.45)] transition-all duration-300 hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-[0_20px_40px_-28px_rgba(16,185,129,0.35)] sm:p-8">
+              <h3 className="text-xl font-black tracking-tight text-slate-950 sm:text-2xl">
+                BAPES{" "}
+                <span className="text-sm font-bold text-slate-500 sm:text-base">
+                  (Brevet d&apos;Aptitude au Professorat)
+                </span>
               </h3>
-              <p className="text-[#046a4e] font-black text-xs uppercase tracking-wider mt-1">
+
+              <p className="mt-1 text-xs font-black uppercase tracking-wider text-emerald-700">
                 EFFES-SAPIENTIA, Porto-Novo
               </p>
-              <p className="text-slate-700 text-sm leading-relaxed font-bold tracking-tight mt-3">
-                Admis à l'examen national 2022. Acquisition rigoureuse des fondamentaux de la pédagogie et de la didactique des sciences.
+
+              <p className="mt-4 text-sm leading-relaxed text-slate-600 sm:text-base">
+                Admis à l&apos;examen national 2022. Acquisition rigoureuse des
+                fondamentaux de la pédagogie et de la didactique des sciences.
               </p>
             </div>
           </div>
 
           {/* ÉTAPE 2 : CAPES */}
-          <div className="relative group">
-            {/* Badge style Pill + Ring */}
-            <div className="inline-flex items-center bg-slate-100 rounded-full pl-2 pr-6 py-1.5 shadow-sm border border-slate-200/80 mb-4">
-              <div className="w-8 h-8 rounded-full bg-[#046a4e] border-2 border-white flex items-center justify-center -ml-4 shadow-md shrink-0">
-                <div className="w-3 h-3 rounded-full border-2 border-emerald-300 bg-[#046a4e]" />
-              </div>
-              <span className="ml-3 text-xs font-black uppercase tracking-wider text-slate-900">
-                2023 – 2025
-              </span>
+          <div className="relative pb-14 sm:pb-16">
+            {/* Point timeline */}
+            <div className="absolute -left-[42px] top-1 flex h-5 w-5 items-center justify-center rounded-full border-4 border-white bg-emerald-700 shadow-[0_0_0_4px_rgba(16,185,129,0.10)] sm:-left-[52px]">
+              <div className="h-1.5 w-1.5 rounded-full bg-white" />
             </div>
 
-            <div className="bg-slate-50/80 border border-slate-200/90 rounded-3xl p-6 sm:p-8 hover:border-emerald-600/30 transition-all shadow-sm">
-              <span className="inline-block text-[11px] font-black uppercase tracking-wider text-[#046a4e] bg-emerald-100/80 px-3 py-1 rounded-full mb-2">
+            {/* Date */}
+            <div className="mb-4 inline-flex rounded-full border border-slate-200 bg-slate-50 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-slate-900">
+              2023 – 2025
+            </div>
+
+            {/* Carte */}
+            <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-6 shadow-[0_15px_35px_-28px_rgba(15,23,42,0.45)] transition-all duration-300 hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-[0_20px_40px_-28px_rgba(16,185,129,0.35)] sm:p-8">
+              <span className="mb-3 inline-flex rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-emerald-800">
                 Spécialité : Mathématiques-Informatique
               </span>
-              <h3 className="text-xl sm:text-2xl font-black text-slate-950 tracking-tight">
-                CAPES <span className="text-sm font-bold text-slate-600">(Certificat d'Aptitude au Professorat)</span>
+
+              <h3 className="text-xl font-black tracking-tight text-slate-950 sm:text-2xl">
+                CAPES{" "}
+                <span className="text-sm font-bold text-slate-500 sm:text-base">
+                  (Certificat d&apos;Aptitude au Professorat)
+                </span>
               </h3>
-              <p className="text-[#046a4e] font-black text-xs uppercase tracking-wider mt-1">
+
+              <p className="mt-1 text-xs font-black uppercase tracking-wider text-emerald-700">
                 EFFES-SAPIENTIA, Porto-Novo
               </p>
-              <p className="text-slate-700 text-sm leading-relaxed font-bold tracking-tight mt-3">
-                Admis à l'examen national 2025. Maîtrise avancée des sciences formelles, de l'ingénierie pédagogique et de la logique mathématique.
+
+              <p className="mt-4 text-sm leading-relaxed text-slate-600 sm:text-base">
+                Admis à l&apos;examen national 2025. Maîtrise avancée des
+                sciences formelles, de l&apos;ingénierie pédagogique et de la
+                logique mathématique.
               </p>
             </div>
           </div>
 
           {/* ÉTAPE 3 : MÉMOIRE */}
-          <div className="relative group">
-            {/* Badge style Pill + Ring */}
-            <div className="inline-flex items-center bg-slate-100 rounded-full pl-2 pr-6 py-1.5 shadow-sm border border-slate-200/80 mb-4">
-              <div className="w-8 h-8 rounded-full bg-[#046a4e] border-2 border-white flex items-center justify-center -ml-4 shadow-md shrink-0">
-                <div className="w-3 h-3 rounded-full border-2 border-emerald-300 bg-[#046a4e]" />
-              </div>
-              <span className="ml-3 text-xs font-black uppercase tracking-wider text-slate-900">
-                2022 &amp; 2025
-              </span>
+          <div className="relative">
+            {/* Point timeline */}
+            <div className="absolute -left-[42px] top-1 flex h-5 w-5 items-center justify-center rounded-full border-4 border-white bg-emerald-700 shadow-[0_0_0_4px_rgba(16,185,129,0.10)] sm:-left-[52px]">
+              <div className="h-1.5 w-1.5 rounded-full bg-white" />
             </div>
 
-            <div className="bg-slate-50/80 border border-slate-200/90 rounded-3xl p-6 sm:p-8 hover:border-emerald-600/30 transition-all shadow-sm">
-              <span className="inline-block text-[11px] font-black uppercase tracking-wider text-[#046a4e] bg-emerald-100/80 px-3 py-1 rounded-full mb-3">
+            {/* Date */}
+            <div className="mb-4 inline-flex rounded-full border border-slate-200 bg-slate-50 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-slate-900">
+              2022 &amp; 2025
+            </div>
+
+            {/* Carte */}
+            <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-6 shadow-[0_15px_35px_-28px_rgba(15,23,42,0.45)] transition-all duration-300 hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-[0_20px_40px_-28px_rgba(16,185,129,0.35)] sm:p-8">
+              <span className="mb-3 inline-flex rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-emerald-800">
                 Recherche &amp; Terrain
               </span>
-              <h3 className="text-xl sm:text-2xl font-black text-slate-950 tracking-tight mb-4">
-                Mémoires de Fin d'Études
+
+              <h3 className="mb-5 text-xl font-black tracking-tight text-slate-950 sm:text-2xl">
+                Mémoires de Fin d&apos;Études
               </h3>
 
-              <div className="space-y-4 border-l-2 border-emerald-600/30 pl-4 py-1">
+              {/* Mémoires */}
+              <div className="space-y-5 border-l-2 border-emerald-600/30 pl-5">
+
+                {/* Mémoire 1 */}
                 <div>
-                  <p className="text-slate-900 font-bold text-sm italic">
-                    « Remédiation aux difficultés des apprenants sur la propriété de THALÈS et sa réciproque en classe de 3ème »
+                  <p className="text-sm font-bold leading-relaxed text-slate-900 sm:text-base">
+                    « Remédiation aux difficultés des apprenants sur la
+                    propriété de THALÈS et sa réciproque en classe de 3ème »
                   </p>
-                  <p className="text-xs font-black text-slate-600 mt-1">
-                    Direction : CP <strong className="text-slate-950">HOUETO Victor</strong>
+
+                  <p className="mt-1.5 text-xs font-semibold text-slate-500">
+                    Direction : CP{" "}
+                    <strong className="text-slate-800">
+                      HOUETO Victor
+                    </strong>
                   </p>
                 </div>
 
+                {/* Mémoire 2 */}
                 <div>
-                  <p className="text-slate-900 font-bold text-sm italic">
-                    « Optimisation de l'Enseignement des Coniques en classe de Tle C »
+                  <p className="text-sm font-bold leading-relaxed text-slate-900 sm:text-base">
+                    « Optimisation de l&apos;Enseignement des Coniques en
+                    classe de Tle C »
                   </p>
-                  <p className="text-xs font-black text-slate-600 mt-1">
-                    Direction : Dr <strong className="text-slate-950">Bernardin AHOUNOU</strong>
+
+                  <p className="mt-1.5 text-xs font-semibold text-slate-500">
+                    Direction : Dr{" "}
+                    <strong className="text-slate-800">
+                      Bernardin AHOUNOU
+                    </strong>
                   </p>
                 </div>
               </div>
 
-              <div className="mt-6 flex flex-wrap gap-2 text-xs font-black">
-                <span className="bg-white border border-slate-200 text-slate-800 px-3 py-1.5 rounded-xl shadow-xs">
+              {/* Établissements */}
+              <div className="mt-6 flex flex-wrap gap-2">
+                <span className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-black text-slate-800 shadow-sm">
                   CEG Zogbo
                 </span>
-                <span className="bg-white border border-slate-200 text-slate-800 px-3 py-1.5 rounded-xl shadow-xs">
+
+                <span className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-black text-slate-800 shadow-sm">
                   Collège Martin Luther King (Mènontin)
                 </span>
               </div>
