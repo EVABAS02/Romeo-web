@@ -78,21 +78,20 @@ export default function Hero() {
               >
                 ∫ₐᵇ f(x) dx = F(b) − F(a)
               </div>
-
-              {/* Carte principale de la photo */}
-              <div className="relative bg-emerald-50/60 p-6 sm:p-8 rounded-3xl border border-emerald-100/50 w-full z-10 shadow-sm">
-                <div className="relative aspect-[4/5] w-full rounded-2xl overflow-hidden shadow-sm">
-                  <Image
+              {     /* Carte principale de la photo */}
+        <div className="relative w-full z-10 rounded-2xl border border-emerald-100 bg-white p-3 sm:p-4 shadow-[0_20px_50px_-15px_rgba(16,185,129,0.25)]">
+            <div className="relative aspect-[4/5] w-full overflow-hidden rounded-xl bg-emerald-50">
+                              <Image
                     alt="Professeur de Mathématiques"
-                    className="object-cover object-top"
+                    className="object-cover object-top transition-transform duration-700 hover:scale-[1.02]"
                     fill
                     priority
-                    quality={85}
-                    sizes="(max-width: 768px) 90vw, 450px"
-                    src="/images/romeo.webp"
-                  />
-                </div>
-              </div>
+                    quality={90}
+                         sizes="(max-width: 768px) 90vw, (max-width: 1024px) 45vw, 500px"
+                               src="/images/romeo.webp"
+                                      />
+                                    </div>
+                                  </div>
 
             </div>
           </div>
