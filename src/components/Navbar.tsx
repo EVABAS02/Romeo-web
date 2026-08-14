@@ -20,36 +20,44 @@ export default function Navbar() {
   const [activeLink, setActiveLink] = useState("#accueil");
 
   useEffect(() => {
-    // 1. Récupérer toutes les sections présentes sur la page grâce à leurs IDs
-    const sectionIds = navLinks.map((link) => link.href.replace("#", ""));
+    const handleScroll = () => {
+      const sectionIds = navLinks.map((link) =>
+        link.href.replace("#", "")
+      );
 
-    const sections = sectionIds
-      .map((id) => document.getElementById(id))
-      .filter((el): el is HTMLElement => el !== null);
+      const sections = sectionIds
+        .map((id) => document.getElementById(id))
+        .filter((el): el is HTMLElement => el !== null);
 
-    if (sections.length === 0) return;
+      if (sections.length === 0) return;
 
-    // 2. Créer l'IntersectionObserver
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActiveLink(`#${entry.target.id}`);
-          }
-        });
-      },
-      {
-        rootMargin: "-20% 0px -50% 0px",
-        threshold: 0.1,
+      // Position de référence juste sous la Navbar
+      const offset = 120;
+
+      let currentSection = sections[0];
+
+      for (const section of sections) {
+        const rect = section.getBoundingClientRect();
+
+        if (rect.top <= offset) {
+          currentSection = section;
+        } else {
+          break;
+        }
       }
-    );
 
-    // 3. Observer chaque section
-    sections.forEach((section) => observer.observe(section));
+      setActiveLink(`#${currentSection.id}`);
+    };
 
-    // 4. Nettoyage
+    window.addEventListener("scroll", handleScroll, {
+      passive: true,
+    });
+
+    // Déterminer immédiatement la section active
+    handleScroll();
+
     return () => {
-      sections.forEach((section) => observer.unobserve(section));
+      window.removeEventListener("scroll", handleScroll);
     };
   }, []);
 
@@ -97,10 +105,13 @@ export default function Navbar() {
         {/* Bouton Hamburger Mobile & Tablette */}
         <div className="z-10 flex justify-end lg:hidden">
           <button
+            type="button"
             onClick={() => setIsOpen(!isOpen)}
             className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition-all duration-200 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
             aria-label={
-              isOpen ? "Fermer le menu de navigation" : "Ouvrir le menu de navigation"
+              isOpen
+                ? "Fermer le menu de navigation"
+                : "Ouvrir le menu de navigation"
             }
             aria-expanded={isOpen}
             aria-controls="mobile-navigation"
