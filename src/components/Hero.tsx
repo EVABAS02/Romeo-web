@@ -99,6 +99,7 @@ export default function Hero() {
                     alt="Professeur de mathématiques"
                     fill
                     priority
+                    fetchPriority="high"
                     quality={90}
                     sizes="(max-width: 768px) 90vw, (max-width: 1024px) 45vw, 500px"
                     className="object-cover object-top transition-transform duration-700 hover:scale-[1.02]"
