@@ -65,12 +65,8 @@ export default function Temoignages() {
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    // Vérification anti-doublon dans localStorage au montage
     if (typeof window !== "undefined") {
-      const alreadySubmitted = localStorage.getItem(
-        "temoignage_submitted"
-      );
-
+      const alreadySubmitted = localStorage.getItem("temoignage_submitted");
       if (alreadySubmitted) {
         setHasSubmitted(true);
       }
@@ -121,17 +117,11 @@ export default function Temoignages() {
 
       setTemoignages(list);
 
-      // Éviter de garder un index hors limite
       setCurrentIndex((current) =>
-        list.length === 0
-          ? 0
-          : Math.min(current, list.length - 1)
+        list.length === 0 ? 0 : Math.min(current, list.length - 1)
       );
     } catch (error) {
-      console.error(
-        "Erreur lors du chargement des témoignages :",
-        error
-      );
+      console.error("Erreur lors du chargement des témoignages :", error);
     } finally {
       setLoading(false);
     }
@@ -143,18 +133,12 @@ export default function Temoignages() {
 
   const prevSlide = () => {
     if (temoignages.length <= 1) return;
-
-    setCurrentIndex((prev) =>
-      prev === 0 ? temoignages.length - 1 : prev - 1
-    );
+    setCurrentIndex((prev) => (prev === 0 ? temoignages.length - 1 : prev - 1));
   };
 
   const nextSlide = () => {
     if (temoignages.length <= 1) return;
-
-    setCurrentIndex((prev) =>
-      prev === temoignages.length - 1 ? 0 : prev + 1
-    );
+    setCurrentIndex((prev) => (prev === temoignages.length - 1 ? 0 : prev + 1));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -182,7 +166,6 @@ export default function Temoignages() {
         createdAt: serverTimestamp(),
       });
 
-      // Stockage dans localStorage pour la protection anti-doublon
       localStorage.setItem("temoignage_submitted", "true");
 
       setHasSubmitted(true);
@@ -191,11 +174,7 @@ export default function Temoignages() {
       setNote(5);
       setHoverNote(null);
     } catch (error) {
-      console.error(
-        "Erreur lors de l'envoi du témoignage :",
-        error
-      );
-
+      console.error("Erreur lors de l'envoi du témoignage :", error);
       setErrorMessage(
         "Une erreur est survenue lors de l'envoi. Veuillez réessayer."
       );
@@ -232,9 +211,7 @@ export default function Temoignages() {
     >
       <div
         className={`max-w-7xl mx-auto px-6 transition-all duration-700 ease-out transform ${
-          isVisible
-            ? "opacity-100 translate-y-0"
-            : "opacity-0 translate-y-12"
+          isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
         }`}
       >
         {/* En-tête */}
@@ -292,8 +269,8 @@ export default function Temoignages() {
             </h3>
 
             <p className="text-xs text-slate-500 leading-relaxed">
-              Vous avez suivi des cours avec M. Azon ? Soyez le tout premier
-              à donner votre avis et partager votre progression !
+              Vous avez suivi des cours avec M. Azon ? Soyez le tout premier à
+              donner votre avis et partager votre progression !
             </p>
 
             <button
@@ -313,15 +290,10 @@ export default function Temoignages() {
                   {Array.from({
                     length: currentItem?.note || 5,
                   }).map((_, i) => (
-                    <StarIcon
-                      key={i}
-                      filled={true}
-                      className="w-4 h-4"
-                    />
+                    <StarIcon key={i} filled={true} className="w-4 h-4" />
                   ))}
                 </div>
 
-                {/* Statut réel du témoignage */}
                 <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/60 px-3 py-1 rounded-full">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   Avis approuvé
@@ -403,12 +375,18 @@ export default function Temoignages() {
         )}
       </div>
 
-      {/* Modal */}
+      {/* Modal d'ajout de témoignage (Accessibilité A11y améliorée) */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in overflow-hidden">
-          {/* Arrière-plan */}
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in overflow-hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Formulaire de témoignage"
+        >
+          {/* Arrière-plan cliquable pour fermer */}
           <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-500 scale-105"
+            onClick={closeModal}
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-500 scale-105 cursor-pointer"
             style={{
               backgroundImage:
                 "url('https://images.unsplash.com/photo-1509228468518-180dd4864904?q=80&w=1920&auto=format&fit=crop')",
@@ -417,8 +395,8 @@ export default function Temoignages() {
             <div className="absolute inset-0 bg-slate-950/50" />
           </div>
 
-          {/* Fenêtre */}
-          <div className="relative w-full max-w-md rounded-none p-7 sm:p-9 bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] text-white max-h-[90vh] overflow-y-auto">
+          {/* Fenêtre modale */}
+          <div className="relative w-full max-w-md rounded-none p-7 sm:p-9 bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] text-white max-h-[90vh] overflow-y-auto z-10">
             <button
               type="button"
               onClick={closeModal}
@@ -433,7 +411,6 @@ export default function Temoignages() {
             </h3>
 
             {hasSubmitted ? (
-              /* Témoignage déjà envoyé */
               <div className="py-8 text-center space-y-4">
                 <div className="w-14 h-14 bg-emerald-400/20 text-emerald-300 border border-emerald-400/30 rounded-none flex items-center justify-center mx-auto text-2xl font-bold backdrop-blur-sm">
                   ✓
@@ -470,7 +447,6 @@ export default function Temoignages() {
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Nom */}
                   <div>
                     <label
                       htmlFor="testimonial-name"
@@ -491,7 +467,6 @@ export default function Temoignages() {
                     />
                   </div>
 
-                  {/* Rôle */}
                   <div>
                     <label
                       htmlFor="testimonial-role"
@@ -506,10 +481,7 @@ export default function Temoignages() {
                         value={role}
                         onChange={(e) =>
                           setRole(
-                            e.target.value as
-                              | "Parent"
-                              | "Élève"
-                              | "Collègue"
+                            e.target.value as "Parent" | "Élève" | "Collègue"
                           )
                         }
                         className="w-full px-1 py-2.5 bg-transparent border-b border-white/30 text-xs text-white outline-none focus:border-emerald-400 transition-all appearance-none cursor-pointer rounded-none"
@@ -542,7 +514,6 @@ export default function Temoignages() {
                     </div>
                   </div>
 
-                  {/* Note */}
                   <div>
                     <label className="block text-xs font-bold text-slate-100 mb-2">
                       Note globale
@@ -570,7 +541,6 @@ export default function Temoignages() {
                     </div>
                   </div>
 
-                  {/* Message */}
                   <div>
                     <label
                       htmlFor="testimonial-message"
@@ -591,7 +561,6 @@ export default function Temoignages() {
                     />
                   </div>
 
-                  {/* Bouton */}
                   <div className="pt-2">
                     <button
                       type="submit"
