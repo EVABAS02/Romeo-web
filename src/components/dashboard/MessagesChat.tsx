@@ -1,18 +1,19 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
-import { db } from "../../lib/firebase";
+import React, { useEffect, useRef, useState } from "react";
+import { auth, db } from "../../lib/firebase";
+import { getIdToken } from "firebase/auth";
 import {
-  collection,
-  query,
-  orderBy,
-  onSnapshot,
   addDoc,
-  doc,
-  updateDoc,
+  collection,
   deleteDoc,
+  doc,
+  onSnapshot,
+  orderBy,
+  query,
   serverTimestamp,
   Timestamp,
+  updateDoc,
 } from "firebase/firestore";
 import { Conversation, MessageItem } from "../../types/chat";
 
@@ -21,65 +22,138 @@ interface MessagesChatProps {
   onSelectConv?: (id: string) => void;
 }
 
-export default function MessagesChat({ selectedConvId, onSelectConv }: MessagesChatProps) {
+export default function MessagesChat({
+  selectedConvId,
+  onSelectConv,
+}: MessagesChatProps) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [selectedConv, setSelectedConv] = useState<Conversation | null>(null);
+  const [selectedConv, setSelectedConv] =
+    useState<Conversation | null>(null);
+
   const [messages, setMessages] = useState<MessageItem[]>([]);
   const [replyText, setReplyText] = useState("");
   const [sending, setSending] = useState(false);
-  
-  // États pour la modification de message
+
+  // Modification d'un message
   const [editingMsgId, setEditingMsgId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  /**
+   * Scroll automatique vers le dernier message
+   */
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
   };
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  // 1. Écouter TOUTES les conversations
+  /**
+   * ============================================================
+   * 1. ÉCOUTER LES CONVERSATIONS
+   * ============================================================
+   */
   useEffect(() => {
-    const q = query(
-      collection(db, "conversations"),
+    const conversationsRef = collection(db, "conversations");
+
+    const conversationsQuery = query(
+      conversationsRef,
       orderBy("updatedAt", "desc")
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const convs = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Conversation[];
+    const unsubscribe = onSnapshot(
+      conversationsQuery,
+      (snapshot) => {
+        const convs = snapshot.docs.map((conversationDoc) => ({
+          id: conversationDoc.id,
+          ...conversationDoc.data(),
+        })) as Conversation[];
 
-      setConversations(convs);
+        setConversations(convs);
 
-      setSelectedConv((prevSelected) => {
+        /**
+         * Si le dashboard nous demande d'ouvrir
+         * une conversation précise.
+         */
         if (selectedConvId) {
-          return convs.find((c) => c.id === selectedConvId) || prevSelected;
+          const requestedConversation = convs.find(
+            (conversation) => conversation.id === selectedConvId
+          );
+
+          if (requestedConversation) {
+            setSelectedConv(requestedConversation);
+          }
         }
-        if (convs.length > 0 && !prevSelected) {
-          return convs[0];
-        }
-        if (prevSelected) {
-          return convs.find((c) => c.id === prevSelected.id) || prevSelected;
-        }
-        return prevSelected;
-      });
-    });
+
+        /**
+         * Si aucune conversation n'est sélectionnée,
+         * on sélectionne automatiquement la première.
+         */
+        setSelectedConv((previousConversation) => {
+          if (selectedConvId) {
+            return (
+              convs.find(
+                (conversation) =>
+                  conversation.id === selectedConvId
+              ) || previousConversation
+            );
+          }
+
+          if (!previousConversation && convs.length > 0) {
+            return convs[0];
+          }
+
+          if (previousConversation) {
+            return (
+              convs.find(
+                (conversation) =>
+                  conversation.id === previousConversation.id
+              ) || previousConversation
+            );
+          }
+
+          return null;
+        });
+      },
+      (error) => {
+        console.error(
+          "Erreur lors de la récupération des conversations :",
+          error
+        );
+      }
+    );
 
     return () => unsubscribe();
   }, [selectedConvId]);
 
-  // 2. Écouter LES MESSAGES de la conversation sélectionnée
+  /**
+   * ============================================================
+   * 2. ÉCOUTER LES MESSAGES DE LA CONVERSATION
+   * ============================================================
+   */
   useEffect(() => {
-    if (!selectedConv?.id) return;
+    if (!selectedConv?.id) {
+      setMessages([]);
+      return;
+    }
 
+    /**
+     * Marquer la conversation comme lue.
+     */
     if (!selectedConv.read) {
-      updateDoc(doc(db, "conversations", selectedConv.id), { read: true }).catch(console.error);
+      updateDoc(doc(db, "conversations", selectedConv.id), {
+        read: true,
+      }).catch((error) => {
+        console.error(
+          "Erreur lors du marquage comme lu :",
+          error
+        );
+      });
     }
 
     const messagesRef = collection(
@@ -88,37 +162,92 @@ export default function MessagesChat({ selectedConvId, onSelectConv }: MessagesC
       selectedConv.id,
       "messages"
     );
-    const q = query(messagesRef, orderBy("createdAt", "asc"));
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const msgs = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as MessageItem[];
+    const messagesQuery = query(
+      messagesRef,
+      orderBy("createdAt", "asc")
+    );
 
-      setMessages(msgs);
-    });
+    const unsubscribe = onSnapshot(
+      messagesQuery,
+      (snapshot) => {
+        const msgs = snapshot.docs.map((messageDoc) => ({
+          id: messageDoc.id,
+          ...messageDoc.data(),
+        })) as MessageItem[];
+
+        setMessages(msgs);
+      },
+      (error) => {
+        console.error(
+          "Erreur lors de la récupération des messages :",
+          error
+        );
+      }
+    );
 
     return () => unsubscribe();
-  }, [selectedConv?.id, selectedConv?.read]);
+  }, [selectedConv?.id]);
 
-  const handleSelect = (conv: Conversation) => {
-    setSelectedConv(conv);
-    if (onSelectConv) onSelectConv(conv.id);
+  /**
+   * ============================================================
+   * 3. SÉLECTIONNER UNE CONVERSATION
+   * ============================================================
+   */
+  const handleSelect = (conversation: Conversation) => {
+    setSelectedConv(conversation);
+
+    if (onSelectConv) {
+      onSelectConv(conversation.id);
+    }
   };
 
-  // 3. Envoyer un message + Email
-  const handleSendReply = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!replyText.trim() || !selectedConv) return;
+  /**
+   * ============================================================
+   * 4. ENVOYER UNE RÉPONSE
+   * ============================================================
+   */
+  const handleSendReply = async (
+    event: React.FormEvent<HTMLFormElement>
+  ) => {
+    event.preventDefault();
+
+    if (!selectedConv?.id) {
+      return;
+    }
 
     const textToSend = replyText.trim();
-    setReplyText("");
+
+    if (!textToSend) {
+      return;
+    }
+
+    /**
+     * Vérifier que l'admin est toujours connecté.
+     */
+    const currentUser = auth.currentUser;
+
+    if (!currentUser) {
+      console.error("Aucun administrateur connecté.");
+      alert("Votre session administrateur a expiré.");
+      return;
+    }
+
     setSending(true);
 
     try {
+      /**
+       * ========================================================
+       * ÉTAPE 1 — ENREGISTRER LA RÉPONSE DANS FIRESTORE
+       * ========================================================
+       */
       await addDoc(
-        collection(db, "conversations", selectedConv.id, "messages"),
+        collection(
+          db,
+          "conversations",
+          selectedConv.id,
+          "messages"
+        ),
         {
           text: textToSend,
           sender: "admin",
@@ -126,105 +255,285 @@ export default function MessagesChat({ selectedConvId, onSelectConv }: MessagesC
         }
       );
 
-      await updateDoc(doc(db, "conversations", selectedConv.id), {
-        lastMessage: textToSend,
-        updatedAt: serverTimestamp(),
-      });
+      /**
+       * ========================================================
+       * ÉTAPE 2 — METTRE À JOUR LA CONVERSATION
+       * ========================================================
+       */
+      await updateDoc(
+        doc(db, "conversations", selectedConv.id),
+        {
+          lastMessage: textToSend,
+          updatedAt: serverTimestamp(),
+          read: true,
+        }
+      );
 
-      // API Brevo avec Token Admin
-      await fetch("/api/send-reply", {
+      /**
+       * ========================================================
+       * ÉTAPE 3 — RÉCUPÉRER LE TOKEN FIREBASE DE L'ADMIN
+       * ========================================================
+       *
+       * IMPORTANT :
+       * On n'utilise plus NEXT_PUBLIC_ADMIN_API_SECRET.
+       *
+       * Le navigateur transmet uniquement le token
+       * d'authentification Firebase de l'utilisateur connecté.
+       */
+      const idToken = await getIdToken(currentUser);
+
+      /**
+       * ========================================================
+       * ÉTAPE 4 — ENVOYER LA DEMANDE À NOTRE API
+       * ========================================================
+       */
+      const response = await fetch("/api/send-reply", {
         method: "POST",
-        headers: { 
+
+        headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${process.env.NEXT_PUBLIC_ADMIN_API_SECRET}`
+          Authorization: `Bearer ${idToken}`,
         },
+
         body: JSON.stringify({
           conversationId: selectedConv.id,
           to: selectedConv.email,
-          subject: selectedConv.sujet || "Réponse à votre message",
+          subject:
+            selectedConv.sujet ||
+            "Réponse à votre message",
           replyText: textToSend,
           recipientName: selectedConv.nom,
         }),
       });
+
+      /**
+       * L'API doit répondre avec un statut HTTP 2xx.
+       */
+      if (!response.ok) {
+        let errorMessage =
+          "Impossible d'envoyer l'email.";
+
+        try {
+          const errorData = await response.json();
+
+          if (errorData?.error) {
+            errorMessage = errorData.error;
+          }
+        } catch {
+          // La réponse n'est peut-être pas du JSON.
+        }
+
+        throw new Error(errorMessage);
+      }
+
+      /**
+       * Nettoyage du champ uniquement après
+       * une opération réussie.
+       */
+      setReplyText("");
+
+      console.log(
+        "Réponse enregistrée et email envoyé avec succès."
+      );
     } catch (error) {
-      console.error("Erreur d'envoi :", error);
+      console.error(
+        "Erreur lors de l'envoi de la réponse :",
+        error
+      );
+
+      /**
+       * IMPORTANT :
+       * Si Firestore a accepté le message mais que
+       * l'email échoue, le message reste dans le chat.
+       *
+       * On informe donc clairement l'admin.
+       */
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Une erreur est survenue lors de l'envoi."
+      );
     } finally {
       setSending(false);
     }
   };
 
-  // 🗑️ 4. SUPPRIMER UN MESSAGE
+  /**
+   * ============================================================
+   * 5. SUPPRIMER UN MESSAGE
+   * ============================================================
+   */
   const handleDeleteMessage = async (msgId: string) => {
-    if (!selectedConv?.id) return;
-    if (!confirm("Voulez-vous vraiment supprimer ce message ?")) return;
+    if (!selectedConv?.id || !msgId) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Voulez-vous vraiment supprimer ce message ?"
+    );
+
+    if (!confirmed) {
+      return;
+    }
 
     try {
-      await deleteDoc(doc(db, "conversations", selectedConv.id, "messages", msgId));
+      await deleteDoc(
+        doc(
+          db,
+          "conversations",
+          selectedConv.id,
+          "messages",
+          msgId
+        )
+      );
     } catch (error) {
-      console.error("Erreur lors de la suppression :", error);
+      console.error(
+        "Erreur lors de la suppression du message :",
+        error
+      );
+
+      alert(
+        "Impossible de supprimer ce message."
+      );
     }
   };
 
-  // ✏️ 5. ENREGISTRER LA MODIFICATION D'UN MESSAGE
+  /**
+   * ============================================================
+   * 6. MODIFIER UN MESSAGE
+   * ============================================================
+   */
   const handleSaveEdit = async (msgId: string) => {
-    if (!selectedConv?.id || !editText.trim()) return;
+    if (!selectedConv?.id || !msgId) {
+      return;
+    }
+
+    const text = editText.trim();
+
+    if (!text) {
+      return;
+    }
 
     try {
-      await updateDoc(doc(db, "conversations", selectedConv.id, "messages", msgId), {
-        text: editText.trim(),
-      });
+      await updateDoc(
+        doc(
+          db,
+          "conversations",
+          selectedConv.id,
+          "messages",
+          msgId
+        ),
+        {
+          text,
+        }
+      );
+
       setEditingMsgId(null);
       setEditText("");
     } catch (error) {
-      console.error("Erreur lors de la modification :", error);
+      console.error(
+        "Erreur lors de la modification du message :",
+        error
+      );
+
+      alert(
+        "Impossible de modifier ce message."
+      );
     }
   };
 
-  const formatTime = (timestamp: Timestamp | Date | number | string | null | undefined) => {
-    if (!timestamp) return "";
-    const date = (timestamp as Timestamp).toDate 
-      ? (timestamp as Timestamp).toDate() 
-      : new Date(timestamp as string | number | Date);
-    return date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  /**
+   * ============================================================
+   * 7. FORMATAGE DE L'HEURE
+   * ============================================================
+   */
+  const formatTime = (
+    timestamp:
+      | Timestamp
+      | Date
+      | number
+      | string
+      | null
+      | undefined
+  ) => {
+    if (!timestamp) {
+      return "";
+    }
+
+    try {
+      let date: Date;
+
+      if (timestamp instanceof Timestamp) {
+        date = timestamp.toDate();
+      } else if (timestamp instanceof Date) {
+        date = timestamp;
+      } else {
+        date = new Date(timestamp);
+      }
+
+      if (Number.isNaN(date.getTime())) {
+        return "";
+      }
+
+      return date.toLocaleTimeString("fr-FR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return "";
+    }
   };
 
   return (
-    <div className="flex h-[650px] bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
-      {/* COLONNE GAUCHE : Liste des discussions */}
-      <div className="w-1/3 border-r border-slate-100 flex flex-col bg-slate-50/50">
-        <div className="p-4 border-b border-slate-100 bg-white">
-          <h2 className="font-bold text-slate-800 text-lg">Messages reçus</h2>
+    <div className="flex h-[650px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+      {/* ======================================================
+          COLONNE GAUCHE — LISTE DES CONVERSATIONS
+      ======================================================= */}
+      <div className="flex w-1/3 flex-col border-r border-slate-100 bg-slate-50/50">
+        <div className="border-b border-slate-100 bg-white p-4">
+          <h2 className="text-lg font-bold text-slate-800">
+            Messages reçus
+          </h2>
+
           <p className="text-xs text-slate-500">
             {conversations.length} conversation(s)
           </p>
         </div>
 
-        <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
-          {conversations.map((conv) => {
-            const isSelected = selectedConv?.id === conv.id;
+        <div className="flex-1 divide-y divide-slate-100 overflow-y-auto">
+          {conversations.map((conversation) => {
+            const isSelected =
+              selectedConv?.id === conversation.id;
+
             return (
               <button
-                key={conv.id}
-                onClick={() => handleSelect(conv)}
-                className={`w-full text-left p-4 transition-all flex flex-col gap-1 relative ${
+                key={conversation.id}
+                type="button"
+                onClick={() =>
+                  handleSelect(conversation)
+                }
+                className={`relative flex w-full flex-col gap-1 p-4 text-left transition-all ${
                   isSelected
-                    ? "bg-emerald-50/80 border-l-4 border-emerald-600"
+                    ? "border-l-4 border-emerald-600 bg-emerald-50/80"
                     : "hover:bg-slate-100/60"
                 }`}
               >
-                <div className="flex justify-between items-center">
-                  <span className="font-bold text-slate-800 text-sm truncate">
-                    {conv.nom}
+                <div className="flex items-center justify-between">
+                  <span className="truncate text-sm font-bold text-slate-800">
+                    {conversation.nom}
                   </span>
-                  {!conv.read && (
-                    <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full shrink-0"></span>
+
+                  {!conversation.read && (
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500" />
                   )}
                 </div>
-                <span className="text-xs font-semibold text-emerald-700 truncate">
-                  {conv.sujet}
+
+                <span className="truncate text-xs font-semibold text-emerald-700">
+                  {conversation.sujet}
                 </span>
-                <p className="text-xs text-slate-500 truncate">
-                  {conv.lastMessage}
+
+                <p className="truncate text-xs text-slate-500">
+                  {conversation.lastMessage}
                 </p>
               </button>
             );
@@ -238,65 +547,84 @@ export default function MessagesChat({ selectedConvId, onSelectConv }: MessagesC
         </div>
       </div>
 
-      {/* COLONNE DROITE : Zone de Chat */}
+      {/* ======================================================
+          COLONNE DROITE — CHAT
+      ======================================================= */}
       {selectedConv ? (
-        <div className="w-2/3 flex flex-col bg-white">
-          {/* Header */}
-          <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
+        <div className="flex w-2/3 flex-col bg-white">
+          {/* HEADER CHAT */}
+          <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/30 p-4">
             <div>
-              <h3 className="font-bold text-slate-800 text-sm">
+              <h3 className="text-sm font-bold text-slate-800">
                 {selectedConv.nom}
               </h3>
-              <p className="text-xs text-slate-500">{selectedConv.email}</p>
+
+              <p className="text-xs text-slate-500">
+                {selectedConv.email}
+              </p>
             </div>
-            <span className="text-xs bg-slate-100 font-medium text-slate-600 px-3 py-1 rounded-full border border-slate-200">
+
+            <span className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
               {selectedConv.sujet}
             </span>
           </div>
 
-          {/* Les Bulles de Message */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/20">
+          {/* MESSAGES */}
+          <div className="flex-1 space-y-3 overflow-y-auto bg-slate-50/20 p-4">
             {messages.map((msg, index) => {
               const isAdmin = msg.sender === "admin";
-              const isEditing = msg.id ? editingMsgId === msg.id : false;
+              const isEditing =
+                msg.id === editingMsgId;
 
               return (
                 <div
                   key={msg.id || index}
-                  className={`flex flex-col group ${
-                    isAdmin ? "items-end" : "items-start"
+                  className={`group flex flex-col ${
+                    isAdmin
+                      ? "items-end"
+                      : "items-start"
                   }`}
                 >
-                  <div className="flex items-center gap-2 max-w-[80%]">
-                    {/* Boutons d'action pour l'admin (modifier / supprimer) */}
+                  <div className="flex max-w-[80%] items-center gap-2">
+                    {/* ACTIONS ADMIN */}
                     {isAdmin && !isEditing && (
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                      <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                         <button
+                          type="button"
                           onClick={() => {
-                            setEditingMsgId(msg.id ?? null);
+                            setEditingMsgId(
+                              msg.id ?? null
+                            );
                             setEditText(msg.text);
                           }}
-                          className="text-slate-400 hover:text-emerald-600 p-1 text-xs"
+                          className="p-1 text-xs text-slate-400 hover:text-emerald-600"
                           title="Modifier"
+                          aria-label="Modifier le message"
                         >
                           ✏️
                         </button>
+
                         <button
-                          onClick={() => msg.id && handleDeleteMessage(msg.id)}
-                          className="text-slate-400 hover:text-red-600 p-1 text-xs"
+                          type="button"
+                          onClick={() =>
+                            msg.id &&
+                            handleDeleteMessage(msg.id)
+                          }
+                          className="p-1 text-xs text-slate-400 hover:text-red-600"
                           title="Supprimer"
+                          aria-label="Supprimer le message"
                         >
                           🗑️
                         </button>
                       </div>
                     )}
 
-                    {/* Contenu de la bulle */}
+                    {/* BULLE */}
                     <div
-                      className={`p-3.5 rounded-2xl text-xs leading-relaxed w-full ${
+                      className={`w-full rounded-2xl p-3.5 text-xs leading-relaxed ${
                         isAdmin
-                          ? "bg-emerald-700 text-white rounded-br-none shadow-sm"
-                          : "bg-slate-100 text-slate-800 rounded-bl-none border border-slate-200/60"
+                          ? "rounded-br-none bg-emerald-700 text-white shadow-sm"
+                          : "rounded-bl-none border border-slate-200/60 bg-slate-100 text-slate-800"
                       }`}
                     >
                       {isEditing ? (
@@ -304,64 +632,89 @@ export default function MessagesChat({ selectedConvId, onSelectConv }: MessagesC
                           <input
                             type="text"
                             value={editText}
-                            onChange={(e) => setEditText(e.target.value)}
-                            className="bg-emerald-800 text-white px-2 py-1 rounded text-xs outline-none border border-emerald-500"
+                            onChange={(event) =>
+                              setEditText(
+                                event.target.value
+                              )
+                            }
+                            className="rounded border border-emerald-500 bg-emerald-800 px-2 py-1 text-xs text-white outline-none"
+                            autoFocus
                           />
+
                           <div className="flex justify-end gap-2 text-[10px]">
                             <button
-                              onClick={() => setEditingMsgId(null)}
-                              className="underline text-slate-200"
+                              type="button"
+                              onClick={() => {
+                                setEditingMsgId(null);
+                                setEditText("");
+                              }}
+                              className="text-slate-200 underline"
                             >
                               Annuler
                             </button>
+
                             <button
-                              onClick={() => msg.id && handleSaveEdit(msg.id)}
-                              className="bg-white text-emerald-800 px-2 py-0.5 rounded font-bold"
+                              type="button"
+                              onClick={() =>
+                                msg.id &&
+                                handleSaveEdit(msg.id)
+                              }
+                              className="rounded bg-white px-2 py-0.5 font-bold text-emerald-800"
                             >
                               Valider
                             </button>
                           </div>
                         </div>
                       ) : (
-                        <p className="whitespace-pre-wrap">{msg.text}</p>
+                        <p className="whitespace-pre-wrap">
+                          {msg.text}
+                        </p>
                       )}
                     </div>
                   </div>
 
                   {msg.createdAt && (
-                    <span className="text-[10px] text-slate-400 mt-1 px-1">
+                    <span className="mt-1 px-1 text-[10px] text-slate-400">
                       {formatTime(msg.createdAt)}
                     </span>
                   )}
                 </div>
               );
             })}
+
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Formulaire d'envoi */}
+          {/* FORMULAIRE */}
           <form
             onSubmit={handleSendReply}
-            className="p-3 border-t border-slate-100 flex gap-2 bg-white"
+            className="flex gap-2 border-t border-slate-100 bg-white p-3"
           >
             <input
               type="text"
               value={replyText}
-              onChange={(e) => setReplyText(e.target.value)}
+              onChange={(event) =>
+                setReplyText(event.target.value)
+              }
               placeholder={`Répondre à ${selectedConv.nom}...`}
-              className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs outline-none focus:ring-2 focus:ring-emerald-600 transition-all text-slate-800"
+              disabled={sending}
+              maxLength={2000}
+              className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-800 outline-none transition-all focus:ring-2 focus:ring-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
             />
+
             <button
               type="submit"
-              disabled={sending || !replyText.trim()}
-              className="bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white font-bold px-5 py-3 rounded-xl text-xs transition-all cursor-pointer shadow-md"
+              disabled={
+                sending || !replyText.trim()
+              }
+              className="cursor-pointer rounded-xl bg-emerald-700 px-5 py-3 text-xs font-bold text-white shadow-md transition-all hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {sending ? "Envoi..." : "Envoyer"}
             </button>
           </form>
         </div>
       ) : (
-        <div className="w-2/3 flex items-center justify-center text-slate-400 text-sm">
+        <div className="flex w-2/3 items-center justify-center text-sm text-slate-400">
           Sélectionnez une conversation pour échanger.
         </div>
       )}

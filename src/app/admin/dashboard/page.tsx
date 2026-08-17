@@ -3,12 +3,20 @@
 import React, { useEffect, useState } from "react";
 import { auth, db } from "../../../lib/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
+import {
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
+} from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import MessagesChat from "../../../components/dashboard/MessagesChat";
 import GestionRessources from "../../../components/dashboard/GestionRessources";
+import GestionTemoignages from "../../../components/dashboard/GestionTemoignages";
 import { Conversation } from "../../../types/chat";
 import { Menu, X } from "lucide-react";
+
+const ADMIN_UID = "Xp9PJehVALcSvDZCuWA0YTUJd672";
 
 interface ContactItem {
   nom: string;
@@ -21,53 +29,117 @@ type DashboardTab =
   | "dashboard"
   | "messages"
   | "contacts"
-  | "cours_epreuves";
+  | "cours_epreuves"
+  | "temoignages";
 
 export default function Dashboard() {
-  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>(
+    []
+  );
+
   const [loading, setLoading] = useState(true);
+
   const [activeTab, setActiveTab] =
     useState<DashboardTab>("dashboard");
+
   const [selectedConvId, setSelectedConvId] = useState<string | null>(
     null
   );
+
   const [searchTerm, setSearchTerm] = useState("");
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const [isMobileMenuOpen, setIsMobileMenuOpen] =
+    useState(false);
 
   const router = useRouter();
 
+  /**
+   * ============================================================
+   * AUTHENTIFICATION ADMIN + ÉCOUTE DES CONVERSATIONS
+   * ============================================================
+   */
   useEffect(() => {
-    // 1. Auth check
-    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        router.push("/admin");
+    let unsubscribeConversations: (() => void) | null = null;
+
+    const unsubscribeAuth = onAuthStateChanged(
+      auth,
+      (user) => {
+        // Aucun utilisateur connecté
+        if (!user) {
+          setLoading(false);
+          router.push("/admin");
+          return;
+        }
+
+        // Vérification supplémentaire côté client.
+        // La vraie sécurité reste protégée par Firestore Rules.
+        if (user.uid !== ADMIN_UID) {
+          console.error(
+            "Accès refusé : utilisateur non administrateur."
+          );
+
+          setLoading(false);
+
+          signOut(auth).finally(() => {
+            router.push("/admin");
+          });
+
+          return;
+        }
+
+        // L'utilisateur est maintenant authentifié
+        // et correspond à ton compte admin.
+        // On peut seulement maintenant écouter Firestore.
+        const conversationsQuery = query(
+          collection(db, "conversations"),
+          orderBy("updatedAt", "desc")
+        );
+
+        unsubscribeConversations = onSnapshot(
+          conversationsQuery,
+          (snapshot) => {
+            const convs: Conversation[] = snapshot.docs.map(
+              (docSnap) => ({
+                id: docSnap.id,
+                ...docSnap.data(),
+              })
+            ) as Conversation[];
+
+            setConversations(convs);
+            setLoading(false);
+          },
+          (error) => {
+            console.error(
+              "Erreur Firestore - conversations :",
+              error
+            );
+
+            setConversations([]);
+            setLoading(false);
+          }
+        );
       }
-    });
-
-    // 2. Écoute conversations Firestore
-    const q = query(
-      collection(db, "conversations"),
-      orderBy("updatedAt", "desc")
     );
-
-    const unsubscribeDocs = onSnapshot(q, (snapshot) => {
-      const convs: Conversation[] = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Conversation[];
-
-      setConversations(convs);
-      setLoading(false);
-    });
 
     return () => {
       unsubscribeAuth();
-      unsubscribeDocs();
+
+      if (unsubscribeConversations) {
+        unsubscribeConversations();
+      }
     };
   }, [router]);
 
   const handleLogout = async () => {
-    await signOut(auth);
+    try {
+      await signOut(auth);
+      router.push("/admin");
+    } catch (error) {
+      console.error(
+        "Erreur lors de la déconnexion :",
+        error
+      );
+    }
   };
 
   const handleOpenConversation = (convId: string) => {
@@ -85,12 +157,18 @@ export default function Dashboard() {
     }
   };
 
-  // 📊 Stats
+  // ============================================================
+  // STATS
+  // ============================================================
+
   const totalConversations = conversations.length;
+
   const unreadMessages = conversations.filter(
     (c) => !c.read
   ).length;
-  const readMessages = totalConversations - unreadMessages;
+
+  const readMessages =
+    totalConversations - unreadMessages;
 
   const coursCount = conversations.filter(
     (c) =>
@@ -99,14 +177,21 @@ export default function Dashboard() {
       c.sujet?.toLowerCase().includes("cours")
   ).length;
 
+  const normalizedSearch = searchTerm
+    .trim()
+    .toLowerCase();
+
   const filteredConversations = conversations.filter(
     (c) =>
-      c.nom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.sujet?.toLowerCase().includes(searchTerm.toLowerCase())
+      c.nom?.toLowerCase().includes(normalizedSearch) ||
+      c.email?.toLowerCase().includes(normalizedSearch) ||
+      c.sujet?.toLowerCase().includes(normalizedSearch)
   );
 
-  // 👥 Répertoire Contacts
+  // ============================================================
+  // RÉPERTOIRE CONTACTS
+  // ============================================================
+
   const contactMap = new Map<string, ContactItem>();
 
   conversations.forEach((c) => {
@@ -129,20 +214,36 @@ export default function Dashboard() {
     }
   });
 
-  const uniqueContacts = Array.from(contactMap.values());
+  const uniqueContacts = Array.from(
+    contactMap.values()
+  );
+
+  // ============================================================
+  // PLACEHOLDER RECHERCHE
+  // ============================================================
 
   const getSearchPlaceholder = () => {
     switch (activeTab) {
       case "messages":
         return "Rechercher une conversation...";
+
       case "contacts":
         return "Rechercher un contact...";
+
       case "cours_epreuves":
         return "Rechercher une ressource...";
+
+      case "temoignages":
+        return "Rechercher un témoignage...";
+
       default:
         return "Rechercher...";
     }
   };
+
+  // ============================================================
+  // LOADING INITIAL
+  // ============================================================
 
   if (loading) {
     return (
@@ -155,19 +256,28 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-[#F4F5F9] p-3 font-sans text-slate-800 sm:p-6">
       <div className="mx-auto flex max-w-[1600px] gap-6">
-        {/* ================= SIDEBAR DESKTOP ================= */}
+        {/* ======================================================
+            SIDEBAR DESKTOP
+        ======================================================= */}
         <aside className="hidden min-h-[calc(100vh-3rem)] w-64 flex-col justify-between rounded-3xl bg-white p-6 shadow-sm lg:flex">
           <div>
             <div className="space-y-6">
+              {/* ================= MENU ================= */}
               <div>
                 <p className="mb-3 px-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                   MENU
                 </p>
 
-                <nav className="space-y-1" aria-label="Menu principal">
+                <nav
+                  className="space-y-1"
+                  aria-label="Menu principal"
+                >
+                  {/* Dashboard */}
                   <button
                     type="button"
-                    onClick={() => handleTabChange("dashboard")}
+                    onClick={() =>
+                      handleTabChange("dashboard")
+                    }
                     aria-current={
                       activeTab === "dashboard"
                         ? "page"
@@ -197,11 +307,16 @@ export default function Dashboard() {
                     Dashboard
                   </button>
 
+                  {/* Messagerie */}
                   <button
                     type="button"
-                    onClick={() => handleTabChange("messages")}
+                    onClick={() =>
+                      handleTabChange("messages")
+                    }
                     aria-current={
-                      activeTab === "messages" ? "page" : undefined
+                      activeTab === "messages"
+                        ? "page"
+                        : undefined
                     }
                     className={`flex w-full items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold outline-none transition-all focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 ${
                       activeTab === "messages"
@@ -243,6 +358,7 @@ export default function Dashboard() {
                 </nav>
               </div>
 
+              {/* ================= GESTION ================= */}
               <div>
                 <p className="mb-3 px-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                   GESTION
@@ -252,9 +368,12 @@ export default function Dashboard() {
                   className="space-y-1"
                   aria-label="Gestion"
                 >
+                  {/* Contacts */}
                   <button
                     type="button"
-                    onClick={() => handleTabChange("contacts")}
+                    onClick={() =>
+                      handleTabChange("contacts")
+                    }
                     aria-current={
                       activeTab === "contacts"
                         ? "page"
@@ -284,10 +403,13 @@ export default function Dashboard() {
                     Élèves & Contacts
                   </button>
 
+                  {/* Cours & Épreuves */}
                   <button
                     type="button"
                     onClick={() =>
-                      handleTabChange("cours_epreuves")
+                      handleTabChange(
+                        "cours_epreuves"
+                      )
                     }
                     aria-current={
                       activeTab === "cours_epreuves"
@@ -311,17 +433,53 @@ export default function Dashboard() {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth="2"
-                        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332 1.253-4.5 1.253"
+                        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332. 477 4.5 1.253v13C19.832 18.477 18.247 18.5 18.247 18.5c-1.746 0-3.332 1.253-4.5 1.253"
                       />
                     </svg>
 
                     Cours &amp; Épreuves
+                  </button>
+
+                  {/* Témoignages */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleTabChange("temoignages")
+                    }
+                    aria-current={
+                      activeTab === "temoignages"
+                        ? "page"
+                        : undefined
+                    }
+                    className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold outline-none transition-all focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 ${
+                      activeTab === "temoignages"
+                        ? "bg-emerald-600 text-white shadow-lg shadow-emerald-200"
+                        : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                    }`}
+                  >
+                    <svg
+                      className="h-5 w-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M7 8h10M7 12h7m-9 8-3 1 1-4A8 8 0 1 1 20 12"
+                      />
+                    </svg>
+
+                    Témoignages
                   </button>
                 </nav>
               </div>
             </div>
           </div>
 
+          {/* Déconnexion */}
           <div className="pt-4">
             <button
               type="button"
@@ -348,9 +506,11 @@ export default function Dashboard() {
           </div>
         </aside>
 
-        {/* ================= CONTENU PRINCIPAL ================= */}
+        {/* ======================================================
+            CONTENU PRINCIPAL
+        ======================================================= */}
         <main className="min-w-0 flex-1 space-y-6">
-          {/* Header */}
+          {/* ================= HEADER ================= */}
           <header className="relative flex flex-col items-start gap-4 bg-transparent pt-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 items-center gap-3">
               {/* Menu mobile */}
@@ -358,7 +518,9 @@ export default function Dashboard() {
                 <button
                   type="button"
                   onClick={() =>
-                    setIsMobileMenuOpen((prev) => !prev)
+                    setIsMobileMenuOpen(
+                      (prev) => !prev
+                    )
                   }
                   className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm outline-none transition-all hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
                   aria-label={
@@ -390,15 +552,21 @@ export default function Dashboard() {
 
                   {activeTab === "cours_epreuves" &&
                     "Gestion des Cours & Épreuves"}
+
+                  {activeTab === "temoignages" &&
+                    "Gestion des Témoignages"}
                 </h1>
 
                 <p className="text-xs font-medium capitalize text-slate-400">
-                  {new Date().toLocaleDateString("fr-FR", {
-                    weekday: "long",
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
+                  {new Date().toLocaleDateString(
+                    "fr-FR",
+                    {
+                      weekday: "long",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    }
+                  )}
                 </p>
               </div>
             </div>
@@ -450,7 +618,9 @@ export default function Dashboard() {
                     }}
                   />
 
-                  <span className="absolute">ER</span>
+                  <span className="absolute">
+                    ER
+                  </span>
                 </div>
 
                 <div className="hidden text-left sm:block">
@@ -465,7 +635,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Navigation mobile */}
+            {/* ================= MENU MOBILE ================= */}
             {isMobileMenuOpen && (
               <div
                 id="mobile-admin-navigation"
@@ -477,7 +647,9 @@ export default function Dashboard() {
                 >
                   <button
                     type="button"
-                    onClick={() => handleTabChange("dashboard")}
+                    onClick={() =>
+                      handleTabChange("dashboard")
+                    }
                     className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-semibold outline-none transition-all focus-visible:ring-2 focus-visible:ring-emerald-600 ${
                       activeTab === "dashboard"
                         ? "bg-emerald-600 text-white"
@@ -489,14 +661,18 @@ export default function Dashboard() {
 
                   <button
                     type="button"
-                    onClick={() => handleTabChange("messages")}
+                    onClick={() =>
+                      handleTabChange("messages")
+                    }
                     className={`flex w-full items-center justify-between rounded-xl px-4 py-3 text-left text-sm font-semibold outline-none transition-all focus-visible:ring-2 focus-visible:ring-emerald-600 ${
                       activeTab === "messages"
                         ? "bg-emerald-600 text-white"
                         : "text-slate-600 hover:bg-slate-50"
                     }`}
                   >
-                    <span>Messagerie Live</span>
+                    <span>
+                      Messagerie Live
+                    </span>
 
                     {unreadMessages > 0 && (
                       <span
@@ -513,7 +689,9 @@ export default function Dashboard() {
 
                   <button
                     type="button"
-                    onClick={() => handleTabChange("contacts")}
+                    onClick={() =>
+                      handleTabChange("contacts")
+                    }
                     className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-semibold outline-none transition-all focus-visible:ring-2 focus-visible:ring-emerald-600 ${
                       activeTab === "contacts"
                         ? "bg-emerald-600 text-white"
@@ -537,6 +715,20 @@ export default function Dashboard() {
                     Cours &amp; Épreuves
                   </button>
 
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleTabChange("temoignages")
+                    }
+                    className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-semibold outline-none transition-all focus-visible:ring-2 focus-visible:ring-emerald-600 ${
+                      activeTab === "temoignages"
+                        ? "bg-emerald-600 text-white"
+                        : "text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    Témoignages
+                  </button>
+
                   <div className="my-2 border-t border-slate-100" />
 
                   <button
@@ -551,7 +743,9 @@ export default function Dashboard() {
             )}
           </header>
 
-          {/* ================= ONGLET 1 : DASHBOARD ================= */}
+          {/* ====================================================
+              ONGLET 1 : DASHBOARD
+          ===================================================== */}
           {activeTab === "dashboard" && (
             <div className="space-y-6">
               {/* KPIs */}
@@ -636,7 +830,7 @@ export default function Dashboard() {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth="2"
-                          d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332 1.253-4.5 1.253"
+                          d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332 1.253 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332 1.253-4.5 1.253"
                         />
                       </svg>
                     </div>
@@ -702,7 +896,9 @@ export default function Dashboard() {
 
                   <button
                     type="button"
-                    onClick={() => handleTabChange("messages")}
+                    onClick={() =>
+                      handleTabChange("messages")
+                    }
                     className="rounded-md text-xs font-bold text-emerald-600 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
                   >
                     Ouvrir la messagerie live →
@@ -710,32 +906,37 @@ export default function Dashboard() {
                 </div>
 
                 <div className="space-y-3">
-                  {filteredConversations.slice(0, 3).map((conv) => (
-                    <div
-                      key={conv.id}
-                      className="flex items-center justify-between rounded-2xl bg-slate-50 p-4"
-                    >
-                      <div className="min-w-0 pr-4">
-                        <h4 className="truncate text-sm font-bold text-slate-800">
-                          {conv.nom}
-                        </h4>
-
-                        <p className="truncate text-xs text-slate-400">
-                          {conv.sujet} • {conv.lastMessage}
-                        </p>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleOpenConversation(conv.id)
-                        }
-                        className="shrink-0 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white outline-none transition-all hover:bg-emerald-700 focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
+                  {filteredConversations
+                    .slice(0, 3)
+                    .map((conv) => (
+                      <div
+                        key={conv.id}
+                        className="flex items-center justify-between rounded-2xl bg-slate-50 p-4"
                       >
-                        Répondre
-                      </button>
-                    </div>
-                  ))}
+                        <div className="min-w-0 pr-4">
+                          <h4 className="truncate text-sm font-bold text-slate-800">
+                            {conv.nom}
+                          </h4>
+
+                          <p className="truncate text-xs text-slate-400">
+                            {conv.sujet} •{" "}
+                            {conv.lastMessage}
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleOpenConversation(
+                              conv.id
+                            )
+                          }
+                          className="shrink-0 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white outline-none transition-all hover:bg-emerald-700 focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
+                        >
+                          Répondre
+                        </button>
+                      </div>
+                    ))}
 
                   {filteredConversations.length === 0 && (
                     <p className="py-6 text-center text-xs text-slate-400">
@@ -747,17 +948,23 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* ================= ONGLET 2 : MESSAGES LIVE ================= */}
+          {/* ====================================================
+              ONGLET 2 : MESSAGES
+          ===================================================== */}
           {activeTab === "messages" && (
             <div>
               <MessagesChat
                 selectedConvId={selectedConvId}
-                onSelectConv={(id) => setSelectedConvId(id)}
+                onSelectConv={(id) =>
+                  setSelectedConvId(id)
+                }
               />
             </div>
           )}
 
-          {/* ================= ONGLET 3 : ÉLÈVES & CONTACTS ================= */}
+          {/* ====================================================
+              ONGLET 3 : CONTACTS
+          ===================================================== */}
           {activeTab === "contacts" && (
             <div className="space-y-4 rounded-3xl bg-white p-6 shadow-sm">
               <div>
@@ -766,8 +973,9 @@ export default function Dashboard() {
                 </h3>
 
                 <p className="mt-1 text-xs text-slate-400">
-                  Catégorisation automatique : Une personne devient un{" "}
-                  <strong>"Élève"</strong> dès qu'elle fait une demande de{" "}
+                  Catégorisation automatique : Une personne
+                  devient un <strong>"Élève"</strong> dès
+                  qu'elle fait une demande de{" "}
                   <em>Cours particuliers</em>.
                 </p>
               </div>
@@ -778,47 +986,61 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {uniqueContacts.map((contact, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50/50 p-4"
-                    >
-                      <div className="flex min-w-0 items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-700">
-                          {contact.nom?.charAt(0).toUpperCase() ||
-                            "C"}
-                        </div>
-
-                        <div className="truncate">
-                          <h4 className="truncate text-sm font-bold text-slate-800">
-                            {contact.nom}
-                          </h4>
-
-                          <p className="truncate text-xs text-slate-500">
-                            {contact.email}
-                          </p>
-                        </div>
-                      </div>
-
-                      <span
-                        className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
-                          contact.type === "Élève"
-                            ? "bg-emerald-100 text-emerald-700"
-                            : "bg-slate-200 text-slate-600"
-                        }`}
+                  {uniqueContacts.map(
+                    (contact, idx) => (
+                      <div
+                        key={`${contact.email}-${idx}`}
+                        className="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50/50 p-4"
                       >
-                        {contact.type}
-                      </span>
-                    </div>
-                  ))}
+                        <div className="flex min-w-0 items-center gap-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-700">
+                            {contact.nom
+                              ?.charAt(0)
+                              .toUpperCase() ||
+                              "C"}
+                          </div>
+
+                          <div className="truncate">
+                            <h4 className="truncate text-sm font-bold text-slate-800">
+                              {contact.nom}
+                            </h4>
+
+                            <p className="truncate text-xs text-slate-500">
+                              {contact.email}
+                            </p>
+                          </div>
+                        </div>
+
+                        <span
+                          className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
+                            contact.type ===
+                            "Élève"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-slate-200 text-slate-600"
+                          }`}
+                        >
+                          {contact.type}
+                        </span>
+                      </div>
+                    )
+                  )}
                 </div>
               )}
             </div>
           )}
 
-          {/* ================= ONGLET 4 : GESTION COURS & ÉPREUVES ================= */}
+          {/* ====================================================
+              ONGLET 4 : COURS & ÉPREUVES
+          ===================================================== */}
           {activeTab === "cours_epreuves" && (
             <GestionRessources />
+          )}
+
+          {/* ====================================================
+              ONGLET 5 : TÉMOIGNAGES
+          ===================================================== */}
+          {activeTab === "temoignages" && (
+            <GestionTemoignages />
           )}
         </main>
       </div>
