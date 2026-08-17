@@ -12,7 +12,7 @@ function getFirebaseAdminApp() {
 
   if (!projectId || !clientEmail || !privateKey) {
     console.warn(
-      "⚠️ Variables d'environnement Firebase Admin manquantes lors de la compilation."
+      "⚠️ Variables d'environnement Firebase Admin manquantes lors du build."
     );
     return null;
   }
