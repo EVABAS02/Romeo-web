@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { auth, db } from "../../lib/firebase";
+import { db } from "../../lib/firebase";
+import { auth } from "../../lib/firebaseAuth";
 import { getIdToken } from "firebase/auth";
 import {
   addDoc,
@@ -41,7 +42,9 @@ export default function MessagesChat({
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   /**
-   * Scroll automatique vers le dernier message
+   * ============================================================
+   * SCROLL AUTOMATIQUE
+   * ============================================================
    */
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({
@@ -77,8 +80,7 @@ export default function MessagesChat({
         setConversations(convs);
 
         /**
-         * Si le dashboard nous demande d'ouvrir
-         * une conversation précise.
+         * Si le dashboard demande une conversation précise.
          */
         if (selectedConvId) {
           const requestedConversation = convs.find(
@@ -92,7 +94,7 @@ export default function MessagesChat({
 
         /**
          * Si aucune conversation n'est sélectionnée,
-         * on sélectionne automatiquement la première.
+         * sélectionner automatiquement la première.
          */
         setSelectedConv((previousConversation) => {
           if (selectedConvId) {
@@ -223,7 +225,7 @@ export default function MessagesChat({
     }
 
     /**
-     * Vérifier que l'admin est toujours connecté.
+     * Vérifier que l'admin est connecté.
      */
     const currentUser = auth.currentUser;
 
@@ -271,20 +273,14 @@ export default function MessagesChat({
 
       /**
        * ========================================================
-       * ÉTAPE 3 — RÉCUPÉRER LE TOKEN FIREBASE DE L'ADMIN
+       * ÉTAPE 3 — RÉCUPÉRER LE TOKEN FIREBASE
        * ========================================================
-       *
-       * IMPORTANT :
-       * On n'utilise plus NEXT_PUBLIC_ADMIN_API_SECRET.
-       *
-       * Le navigateur transmet uniquement le token
-       * d'authentification Firebase de l'utilisateur connecté.
        */
       const idToken = await getIdToken(currentUser);
 
       /**
        * ========================================================
-       * ÉTAPE 4 — ENVOYER LA DEMANDE À NOTRE API
+       * ÉTAPE 4 — ENVOYER L'EMAIL VIA NOTRE API
        * ========================================================
        */
       const response = await fetch("/api/send-reply", {
@@ -327,8 +323,7 @@ export default function MessagesChat({
       }
 
       /**
-       * Nettoyage du champ uniquement après
-       * une opération réussie.
+       * Nettoyer le champ après succès.
        */
       setReplyText("");
 
@@ -342,11 +337,8 @@ export default function MessagesChat({
       );
 
       /**
-       * IMPORTANT :
-       * Si Firestore a accepté le message mais que
-       * l'email échoue, le message reste dans le chat.
-       *
-       * On informe donc clairement l'admin.
+       * Si Firestore a accepté le message mais
+       * que l'email échoue, le message reste dans le chat.
        */
       alert(
         error instanceof Error
@@ -484,12 +476,19 @@ export default function MessagesChat({
     }
   };
 
+  /**
+   * ============================================================
+   * RENDU
+   * ============================================================
+   */
   return (
     <div className="flex h-[650px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+
       {/* ======================================================
           COLONNE GAUCHE — LISTE DES CONVERSATIONS
       ======================================================= */}
       <div className="flex w-1/3 flex-col border-r border-slate-100 bg-slate-50/50">
+
         <div className="border-b border-slate-100 bg-white p-4">
           <h2 className="text-lg font-bold text-slate-800">
             Messages reçus
@@ -501,6 +500,7 @@ export default function MessagesChat({
         </div>
 
         <div className="flex-1 divide-y divide-slate-100 overflow-y-auto">
+
           {conversations.map((conversation) => {
             const isSelected =
               selectedConv?.id === conversation.id;
@@ -519,6 +519,7 @@ export default function MessagesChat({
                 }`}
               >
                 <div className="flex items-center justify-between">
+
                   <span className="truncate text-sm font-bold text-slate-800">
                     {conversation.nom}
                   </span>
@@ -526,6 +527,7 @@ export default function MessagesChat({
                   {!conversation.read && (
                     <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500" />
                   )}
+
                 </div>
 
                 <span className="truncate text-xs font-semibold text-emerald-700">
@@ -544,6 +546,7 @@ export default function MessagesChat({
               Aucun message reçu pour le moment.
             </div>
           )}
+
         </div>
       </div>
 
@@ -551,9 +554,12 @@ export default function MessagesChat({
           COLONNE DROITE — CHAT
       ======================================================= */}
       {selectedConv ? (
+
         <div className="flex w-2/3 flex-col bg-white">
+
           {/* HEADER CHAT */}
           <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/30 p-4">
+
             <div>
               <h3 className="text-sm font-bold text-slate-800">
                 {selectedConv.nom}
@@ -567,10 +573,12 @@ export default function MessagesChat({
             <span className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
               {selectedConv.sujet}
             </span>
+
           </div>
 
           {/* MESSAGES */}
           <div className="flex-1 space-y-3 overflow-y-auto bg-slate-50/20 p-4">
+
             {messages.map((msg, index) => {
               const isAdmin = msg.sender === "admin";
               const isEditing =
@@ -585,10 +593,13 @@ export default function MessagesChat({
                       : "items-start"
                   }`}
                 >
+
                   <div className="flex max-w-[80%] items-center gap-2">
+
                     {/* ACTIONS ADMIN */}
                     {isAdmin && !isEditing && (
                       <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+
                         <button
                           type="button"
                           onClick={() => {
@@ -616,6 +627,7 @@ export default function MessagesChat({
                         >
                           🗑️
                         </button>
+
                       </div>
                     )}
 
@@ -627,8 +639,11 @@ export default function MessagesChat({
                           : "rounded-bl-none border border-slate-200/60 bg-slate-100 text-slate-800"
                       }`}
                     >
+
                       {isEditing ? (
+
                         <div className="flex flex-col gap-2">
+
                           <input
                             type="text"
                             value={editText}
@@ -642,6 +657,7 @@ export default function MessagesChat({
                           />
 
                           <div className="flex justify-end gap-2 text-[10px]">
+
                             <button
                               type="button"
                               onClick={() => {
@@ -663,13 +679,18 @@ export default function MessagesChat({
                             >
                               Valider
                             </button>
+
                           </div>
                         </div>
+
                       ) : (
+
                         <p className="whitespace-pre-wrap">
                           {msg.text}
                         </p>
+
                       )}
+
                     </div>
                   </div>
 
@@ -678,11 +699,13 @@ export default function MessagesChat({
                       {formatTime(msg.createdAt)}
                     </span>
                   )}
+
                 </div>
               );
             })}
 
             <div ref={messagesEndRef} />
+
           </div>
 
           {/* FORMULAIRE */}
@@ -690,6 +713,7 @@ export default function MessagesChat({
             onSubmit={handleSendReply}
             className="flex gap-2 border-t border-slate-100 bg-white p-3"
           >
+
             <input
               type="text"
               value={replyText}
@@ -711,13 +735,19 @@ export default function MessagesChat({
             >
               {sending ? "Envoi..." : "Envoyer"}
             </button>
+
           </form>
+
         </div>
+
       ) : (
+
         <div className="flex w-2/3 items-center justify-center text-sm text-slate-400">
           Sélectionnez une conversation pour échanger.
         </div>
+
       )}
+
     </div>
   );
 }

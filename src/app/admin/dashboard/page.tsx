@@ -8,6 +8,7 @@ import {
   query,
   orderBy,
   onSnapshot,
+  limit, // <-- NOUVEL IMPORT
 } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import MessagesChat from "../../../components/dashboard/MessagesChat";
@@ -87,12 +88,11 @@ export default function Dashboard() {
           return;
         }
 
-        // L'utilisateur est maintenant authentifié
-        // et correspond à ton compte admin.
-        // On peut seulement maintenant écouter Firestore.
+        // OPTIMISATION : Limite à 50 documents pour économiser les coûts de lecture et la mémoire
         const conversationsQuery = query(
           collection(db, "conversations"),
-          orderBy("updatedAt", "desc")
+          orderBy("updatedAt", "desc"),
+          limit(50) // <-- NOUVEL AJOUT
         );
 
         unsubscribeConversations = onSnapshot(

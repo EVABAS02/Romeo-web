@@ -1,19 +1,40 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+import {
+  initializeApp,
+  getApps,
+  getApp,
+} from "firebase/app";
+
+import {
+  getFirestore,
+} from "firebase/firestore";
+
+import {
+  getAuth,
+} from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  messagingSenderId:
+    process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
+  measurementId:
+    process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// Évite la réinitialisation multiple lors du rechargement à chaud de Next.js
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+// Évite de réinitialiser Firebase plusieurs fois
+// notamment avec le Hot Reload de Next.js.
+const app = !getApps().length
+  ? initializeApp(firebaseConfig)
+  : getApp();
 
+// IMPORTANT : app est exporté car firebaseAuth.ts l'utilise.
+export { app };
+
+// Firestore côté navigateur
 export const db = getFirestore(app);
+
+// Firebase Authentication côté navigateur
 export const auth = getAuth(app);

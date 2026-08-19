@@ -37,6 +37,11 @@ export default function RootLayout({
       lang="fr"
       className={`${plusJakartaSans.variable} h-full antialiased`}
     >
+      <head>
+        {/* Optimisation réseau : Préconnexion aux serveurs Firebase/Google */}
+        <link rel="preconnect" href="https://firestore.googleapis.com" />
+        <link rel="preconnect" href="https://identitytoolkit.googleapis.com" />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
