@@ -66,7 +66,7 @@ export default function Contact() {
   ) => {
     e.preventDefault();
 
-    // Évite les doubles clics / doubles soumissions
+    // Évite les doubles clics / doubles soumissions.
     if (loading) {
       return;
     }
@@ -76,7 +76,10 @@ export default function Contact() {
       text: "",
     });
 
-    // Nettoyage des données avant validation / envoi
+    // ============================================================
+    // NETTOYAGE DES DONNÉES
+    // ============================================================
+
     const nomFinal = nom.trim();
     const emailFinal = email.trim().toLowerCase();
     const autreSujetFinal = autreSujet.trim();
@@ -87,14 +90,9 @@ export default function Contact() {
         ? autreSujetFinal
         : sujet.trim();
 
-    /**
-     * ==========================================================
-     * VALIDATION CLIENT
-     * ==========================================================
-     *
-     * Cette validation améliore l'expérience utilisateur.
-     * La validation serveur de /api/contact reste obligatoire.
-     */
+    // ============================================================
+    // VALIDATION CLIENT
+    // ============================================================
 
     if (
       !nomFinal ||
@@ -141,7 +139,6 @@ export default function Contact() {
       return;
     }
 
-    // Validation supplémentaire de l'email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!emailRegex.test(emailFinal)) {
@@ -155,19 +152,10 @@ export default function Contact() {
     setLoading(true);
 
     try {
-      /**
-       * ========================================================
-       * ENVOI VERS L'API SERVEUR
-       * ========================================================
-       *
-       * Le navigateur ne crée plus directement les documents
-       * Firestore.
-       *
-       * Le serveur /api/contact va :
-       * 1. valider les données
-       * 2. créer la conversation avec Firebase Admin
-       * 3. créer le premier message
-       */
+      // ==========================================================
+      // ENVOI VERS L'API SERVEUR
+      // ==========================================================
+
       const response = await fetch("/api/contact", {
         method: "POST",
         headers: {
@@ -181,38 +169,83 @@ export default function Contact() {
         }),
       });
 
+      // ==========================================================
+      // LIRE LA RÉPONSE SERVEUR
+      // ==========================================================
+
+      const responseText = await response.text();
+
       let data: {
         success?: boolean;
         error?: string;
+        conversationId?: string;
       } = {};
 
-      try {
-        data = await response.json();
-      } catch {
-        data = {};
+      if (responseText) {
+        try {
+          data = JSON.parse(responseText);
+        } catch {
+          console.error(
+            "Réponse non JSON reçue depuis /api/contact :",
+            responseText
+          );
+        }
       }
 
-      /**
-       * Vérification de la réponse serveur
-       */
+      // ==========================================================
+      // GESTION DES ERREURS SERVEUR
+      // ==========================================================
+
       if (!response.ok) {
+        console.error(
+          "Erreur /api/contact :",
+          {
+            status: response.status,
+            statusText: response.statusText,
+            body: data,
+          }
+        );
+
+        // Rate limit IP ou email.
+        if (response.status === 429) {
+          setStatus({
+            type: "error",
+            text:
+              data.error ||
+              "Trop de tentatives. Veuillez patienter avant de réessayer.",
+          });
+
+          return;
+        }
+
+        // Service de protection indisponible.
+        if (response.status === 503) {
+          setStatus({
+            type: "error",
+            text:
+              data.error ||
+              "Le service est temporairement indisponible. Veuillez réessayer dans quelques instants.",
+          });
+
+          return;
+        }
+
         throw new Error(
           data.error ||
-            "Impossible d'envoyer le message."
+            `Impossible d'envoyer le message. (Erreur ${response.status})`
         );
       }
 
-      /**
-       * ========================================================
-       * SUCCÈS
-       * ========================================================
-       */
+      // ==========================================================
+      // SUCCÈS
+      // ==========================================================
+
       setStatus({
         type: "success",
         text: "Votre message a bien été envoyé ! Merci.",
       });
 
-      // Réinitialisation du formulaire
+      // Réinitialisation du formulaire.
       setNom("");
       setEmail("");
       setSujet("");
@@ -296,7 +329,6 @@ export default function Contact() {
                   <h4 className="mb-0.5 text-xs font-bold uppercase tracking-wider text-emerald-300">
                     Localisation
                   </h4>
-
                   <p className="text-base font-semibold text-white">
                     Porto-Novo, Bénin
                   </p>
@@ -350,7 +382,7 @@ export default function Contact() {
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                      d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
                     />
                   </svg>
                 </div>
