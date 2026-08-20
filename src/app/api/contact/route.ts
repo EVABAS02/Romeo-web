@@ -33,8 +33,7 @@ function getClientIp(request: Request): string {
     }
   }
 
-  const realIp =
-    request.headers.get("x-real-ip");
+  const realIp = request.headers.get("x-real-ip");
 
   if (realIp) {
     return realIp.trim();
@@ -55,10 +54,9 @@ export async function POST(request: Request) {
   >;
 
   try {
-    ipRateLimit =
-      await contactIpRateLimit.limit(
-        `contact-ip:${clientIp}`
-      );
+    ipRateLimit = await contactIpRateLimit.limit(
+      `contact-ip:${clientIp}`
+    );
   } catch (error) {
     console.error(
       "[RATE_LIMIT_IP_ERROR] Impossible de contacter Upstash :",
@@ -108,8 +106,7 @@ export async function POST(request: Request) {
         status: 429,
         headers: {
           ...ipRateLimitHeaders,
-          "Retry-After":
-            retryAfter.toString(),
+          "Retry-After": retryAfter.toString(),
         },
       }
     );
@@ -177,8 +174,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const data =
-    body as Record<string, unknown>;
+  const data = body as Record<string, unknown>;
 
   const nom =
     typeof data.nom === "string"
@@ -204,16 +200,10 @@ export async function POST(request: Request) {
   // 4. VALIDATION SERVEUR
   // ============================================================
 
-  if (
-    !nom ||
-    !email ||
-    !sujet ||
-    !message
-  ) {
+  if (!nom || !email || !sujet || !message) {
     return NextResponse.json(
       {
-        error:
-          "Tous les champs sont obligatoires.",
+        error: "Tous les champs sont obligatoires.",
       },
       {
         status: 400,
@@ -350,8 +340,7 @@ export async function POST(request: Request) {
         status: 429,
         headers: {
           ...emailRateLimitHeaders,
-          "Retry-After":
-            retryAfter.toString(),
+          "Retry-After": retryAfter.toString(),
         },
       }
     );
@@ -364,20 +353,19 @@ export async function POST(request: Request) {
   let conversationRef;
 
   try {
-    conversationRef =
-      await adminDb
-        .collection("conversations")
-        .add({
-          nom,
-          email,
-          sujet,
-          lastMessage: message,
-          createdAt:
-            FieldValue.serverTimestamp(),
-          updatedAt:
-            FieldValue.serverTimestamp(),
-          read: false,
-        });
+    conversationRef = await adminDb
+      .collection("conversations")
+      .add({
+        nom,
+        email,
+        sujet,
+        lastMessage: message,
+        createdAt:
+          FieldValue.serverTimestamp(),
+        updatedAt:
+          FieldValue.serverTimestamp(),
+        read: false,
+      });
   } catch (error) {
     console.error(
       "[FIRESTORE_CONVERSATION_ERROR] :",
@@ -434,8 +422,7 @@ export async function POST(request: Request) {
   return NextResponse.json(
     {
       success: true,
-      conversationId:
-        conversationRef.id,
+      conversationId: conversationRef.id,
     },
     {
       status: 201,
