@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 
 import { adminDb } from "../../../lib/firebaseAdmin";
-import { contactRateLimit } from "../../../lib/rateLimit";
+import {
+  contactIpRateLimit,
+  contactEmailRateLimit,
+} from "../../../lib/rateLimit";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -13,18 +16,25 @@ const LIMITS = {
   message: 2000,
 } as const;
 
+/**
+ * Récupère l'adresse IP du visiteur.
+ */
 function getClientIp(request: Request): string {
-  const forwardedFor = request.headers.get("x-forwarded-for");
+  const forwardedFor =
+    request.headers.get("x-forwarded-for");
 
   if (forwardedFor) {
-    const firstIp = forwardedFor.split(",")[0]?.trim();
+    const firstIp = forwardedFor
+      .split(",")[0]
+      ?.trim();
 
     if (firstIp) {
       return firstIp;
     }
   }
 
-  const realIp = request.headers.get("x-real-ip");
+  const realIp =
+    request.headers.get("x-real-ip");
 
   if (realIp) {
     return realIp.trim();
@@ -35,22 +45,23 @@ function getClientIp(request: Request): string {
 
 export async function POST(request: Request) {
   // ============================================================
-  // 1. RATE LIMITING
+  // 1. RATE LIMIT PAR IP
   // ============================================================
 
   const clientIp = getClientIp(request);
 
-  let rateLimit: Awaited<
-    ReturnType<typeof contactRateLimit.limit>
+  let ipRateLimit: Awaited<
+    ReturnType<typeof contactIpRateLimit.limit>
   >;
 
   try {
-    rateLimit = await contactRateLimit.limit(
-      `contact:${clientIp}`
-    );
+    ipRateLimit =
+      await contactIpRateLimit.limit(
+        `contact-ip:${clientIp}`
+      );
   } catch (error) {
     console.error(
-      "[RATE_LIMIT_ERROR] Impossible de contacter Upstash :",
+      "[RATE_LIMIT_IP_ERROR] Impossible de contacter Upstash :",
       error
     );
 
@@ -65,22 +76,26 @@ export async function POST(request: Request) {
     );
   }
 
-  const rateLimitHeaders = {
-    "X-RateLimit-Limit":
-      rateLimit.limit.toString(),
+  const ipRateLimitHeaders = {
+    "X-RateLimit-IP-Limit":
+      ipRateLimit.limit.toString(),
 
-    "X-RateLimit-Remaining":
-      Math.max(0, rateLimit.remaining).toString(),
+    "X-RateLimit-IP-Remaining":
+      Math.max(
+        0,
+        ipRateLimit.remaining
+      ).toString(),
 
-    "X-RateLimit-Reset":
-      rateLimit.reset.toString(),
+    "X-RateLimit-IP-Reset":
+      ipRateLimit.reset.toString(),
   };
 
-  if (!rateLimit.success) {
+  if (!ipRateLimit.success) {
     const retryAfter = Math.max(
       1,
       Math.ceil(
-        (rateLimit.reset - Date.now()) / 1000
+        (ipRateLimit.reset - Date.now()) /
+          1000
       )
     );
 
@@ -92,8 +107,9 @@ export async function POST(request: Request) {
       {
         status: 429,
         headers: {
-          ...rateLimitHeaders,
-          "Retry-After": retryAfter.toString(),
+          ...ipRateLimitHeaders,
+          "Retry-After":
+            retryAfter.toString(),
         },
       }
     );
@@ -110,17 +126,18 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       {
-        error: "Configuration serveur indisponible.",
+        error:
+          "Configuration serveur indisponible.",
       },
       {
         status: 500,
-        headers: rateLimitHeaders,
+        headers: ipRateLimitHeaders,
       }
     );
   }
 
   // ============================================================
-  // 3. LIRE LE CORPS
+  // 3. LIRE LE CORPS DE LA REQUÊTE
   // ============================================================
 
   let body: unknown;
@@ -139,7 +156,7 @@ export async function POST(request: Request) {
       },
       {
         status: 400,
-        headers: rateLimitHeaders,
+        headers: ipRateLimitHeaders,
       }
     );
   }
@@ -155,12 +172,13 @@ export async function POST(request: Request) {
       },
       {
         status: 400,
-        headers: rateLimitHeaders,
+        headers: ipRateLimitHeaders,
       }
     );
   }
 
-  const data = body as Record<string, unknown>;
+  const data =
+    body as Record<string, unknown>;
 
   const nom =
     typeof data.nom === "string"
@@ -186,14 +204,20 @@ export async function POST(request: Request) {
   // 4. VALIDATION SERVEUR
   // ============================================================
 
-  if (!nom || !email || !sujet || !message) {
+  if (
+    !nom ||
+    !email ||
+    !sujet ||
+    !message
+  ) {
     return NextResponse.json(
       {
-        error: "Tous les champs sont obligatoires.",
+        error:
+          "Tous les champs sont obligatoires.",
       },
       {
         status: 400,
-        headers: rateLimitHeaders,
+        headers: ipRateLimitHeaders,
       }
     );
   }
@@ -209,7 +233,7 @@ export async function POST(request: Request) {
       },
       {
         status: 400,
-        headers: rateLimitHeaders,
+        headers: ipRateLimitHeaders,
       }
     );
   }
@@ -225,7 +249,7 @@ export async function POST(request: Request) {
       },
       {
         status: 400,
-        headers: rateLimitHeaders,
+        headers: ipRateLimitHeaders,
       }
     );
   }
@@ -240,7 +264,7 @@ export async function POST(request: Request) {
       },
       {
         status: 400,
-        headers: rateLimitHeaders,
+        headers: ipRateLimitHeaders,
       }
     );
   }
@@ -256,29 +280,104 @@ export async function POST(request: Request) {
       },
       {
         status: 400,
-        headers: rateLimitHeaders,
+        headers: ipRateLimitHeaders,
       }
     );
   }
 
   // ============================================================
-  // 5. FIRESTORE — CONVERSATION
+  // 5. RATE LIMIT PAR EMAIL
+  // ============================================================
+
+  let emailRateLimit: Awaited<
+    ReturnType<typeof contactEmailRateLimit.limit>
+  >;
+
+  try {
+    emailRateLimit =
+      await contactEmailRateLimit.limit(
+        `contact-email:${email}`
+      );
+  } catch (error) {
+    console.error(
+      "[RATE_LIMIT_EMAIL_ERROR] Impossible de contacter Upstash :",
+      error
+    );
+
+    return NextResponse.json(
+      {
+        error:
+          "Le service de protection est temporairement indisponible.",
+      },
+      {
+        status: 503,
+        headers: ipRateLimitHeaders,
+      }
+    );
+  }
+
+  const emailRateLimitHeaders = {
+    ...ipRateLimitHeaders,
+
+    "X-RateLimit-Email-Limit":
+      emailRateLimit.limit.toString(),
+
+    "X-RateLimit-Email-Remaining":
+      Math.max(
+        0,
+        emailRateLimit.remaining
+      ).toString(),
+
+    "X-RateLimit-Email-Reset":
+      emailRateLimit.reset.toString(),
+  };
+
+  if (!emailRateLimit.success) {
+    const retryAfter = Math.max(
+      1,
+      Math.ceil(
+        (emailRateLimit.reset - Date.now()) /
+          1000
+      )
+    );
+
+    return NextResponse.json(
+      {
+        error:
+          "Cette adresse email a atteint la limite quotidienne de messages. Veuillez réessayer plus tard.",
+      },
+      {
+        status: 429,
+        headers: {
+          ...emailRateLimitHeaders,
+          "Retry-After":
+            retryAfter.toString(),
+        },
+      }
+    );
+  }
+
+  // ============================================================
+  // 6. FIRESTORE — CRÉER LA CONVERSATION
   // ============================================================
 
   let conversationRef;
 
   try {
-    conversationRef = await adminDb
-      .collection("conversations")
-      .add({
-        nom,
-        email,
-        sujet,
-        lastMessage: message,
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-        read: false,
-      });
+    conversationRef =
+      await adminDb
+        .collection("conversations")
+        .add({
+          nom,
+          email,
+          sujet,
+          lastMessage: message,
+          createdAt:
+            FieldValue.serverTimestamp(),
+          updatedAt:
+            FieldValue.serverTimestamp(),
+          read: false,
+        });
   } catch (error) {
     console.error(
       "[FIRESTORE_CONVERSATION_ERROR] :",
@@ -292,13 +391,13 @@ export async function POST(request: Request) {
       },
       {
         status: 500,
-        headers: rateLimitHeaders,
+        headers: emailRateLimitHeaders,
       }
     );
   }
 
   // ============================================================
-  // 6. FIRESTORE — PREMIER MESSAGE
+  // 7. FIRESTORE — CRÉER LE PREMIER MESSAGE
   // ============================================================
 
   try {
@@ -307,7 +406,8 @@ export async function POST(request: Request) {
       .add({
         text: message,
         sender: "client",
-        createdAt: FieldValue.serverTimestamp(),
+        createdAt:
+          FieldValue.serverTimestamp(),
       });
   } catch (error) {
     console.error(
@@ -322,23 +422,24 @@ export async function POST(request: Request) {
       },
       {
         status: 500,
-        headers: rateLimitHeaders,
+        headers: emailRateLimitHeaders,
       }
     );
   }
 
   // ============================================================
-  // 7. SUCCÈS
+  // 8. SUCCÈS
   // ============================================================
 
   return NextResponse.json(
     {
       success: true,
-      conversationId: conversationRef.id,
+      conversationId:
+        conversationRef.id,
     },
     {
       status: 201,
-      headers: rateLimitHeaders,
+      headers: emailRateLimitHeaders,
     }
   );
 }
