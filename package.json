@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@uploadthing/react": "^7.3.3",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.38.2",
     "firebase": "^12.17.1",
     "firebase-admin": "^14.2.0",
     "lucide-react": "^1.28.0",
