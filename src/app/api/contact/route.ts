@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
+
 import { adminDb } from "../../../lib/firebaseAdmin";
+import {
+  contactIpRateLimit,
+  contactEmailRateLimit,
+} from "../../../lib/rateLimit";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -41,53 +46,7 @@ function getClientIp(request: Request): string {
 export async function POST(request: Request) {
   try {
     // ============================================================
-    // 1. CHARGER LE RATE LIMITER
-    // ============================================================
-
-    let contactIpRateLimit:
-      | Awaited<
-          ReturnType<
-            typeof import("../../../lib/rateLimit")
-          >
-        >["contactIpRateLimit"]
-      ;
-
-    let contactEmailRateLimit:
-      | Awaited<
-          ReturnType<
-            typeof import("../../../lib/rateLimit")
-          >
-        >["contactEmailRateLimit"]
-      ;
-
-    try {
-      const rateLimitModule =
-        await import("../../../lib/rateLimit");
-
-      contactIpRateLimit =
-        rateLimitModule.contactIpRateLimit;
-
-      contactEmailRateLimit =
-        rateLimitModule.contactEmailRateLimit;
-    } catch (error) {
-      console.error(
-        "[RATE_LIMIT_INIT_ERROR] Impossible d'initialiser Upstash :",
-        error
-      );
-
-      return NextResponse.json(
-        {
-          error:
-            "Le service de protection est temporairement indisponible.",
-        },
-        {
-          status: 503,
-        }
-      );
-    }
-
-    // ============================================================
-    // 2. RATE LIMIT PAR IP
+    // 1. RATE LIMIT PAR IP
     // ============================================================
 
     const clientIp = getClientIp(request);
@@ -101,7 +60,7 @@ export async function POST(request: Request) {
         );
     } catch (error) {
       console.error(
-        "[RATE_LIMIT_IP_ERROR] Erreur Upstash :",
+        "[RATE_LIMIT_IP_ERROR] Impossible de contacter Upstash :",
         error
       );
 
@@ -156,7 +115,7 @@ export async function POST(request: Request) {
     }
 
     // ============================================================
-    // 3. FIREBASE ADMIN
+    // 2. VÉRIFIER FIREBASE ADMIN
     // ============================================================
 
     if (!adminDb) {
@@ -177,7 +136,7 @@ export async function POST(request: Request) {
     }
 
     // ============================================================
-    // 4. LIRE LE CORPS DE LA REQUÊTE
+    // 3. LIRE LE CORPS DE LA REQUÊTE
     // ============================================================
 
     let body: unknown;
@@ -241,7 +200,7 @@ export async function POST(request: Request) {
         : "";
 
     // ============================================================
-    // 5. VALIDATION SERVEUR
+    // 4. VALIDATION SERVEUR
     // ============================================================
 
     if (
@@ -326,7 +285,7 @@ export async function POST(request: Request) {
     }
 
     // ============================================================
-    // 6. RATE LIMIT PAR EMAIL
+    // 5. RATE LIMIT PAR EMAIL
     // ============================================================
 
     let emailRateLimit;
@@ -338,7 +297,7 @@ export async function POST(request: Request) {
         );
     } catch (error) {
       console.error(
-        "[RATE_LIMIT_EMAIL_ERROR] Erreur Upstash :",
+        "[RATE_LIMIT_EMAIL_ERROR] Impossible de contacter Upstash :",
         error
       );
 
@@ -396,7 +355,7 @@ export async function POST(request: Request) {
     }
 
     // ============================================================
-    // 7. CRÉER LA CONVERSATION
+    // 6. FIRESTORE — CRÉER LA CONVERSATION
     // ============================================================
 
     let conversationRef;
@@ -435,7 +394,7 @@ export async function POST(request: Request) {
     }
 
     // ============================================================
-    // 8. CRÉER LE PREMIER MESSAGE
+    // 7. FIRESTORE — PREMIER MESSAGE
     // ============================================================
 
     try {
@@ -466,7 +425,7 @@ export async function POST(request: Request) {
     }
 
     // ============================================================
-    // 9. SUCCÈS
+    // 8. SUCCÈS
     // ============================================================
 
     return NextResponse.json(
@@ -482,14 +441,14 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     console.error(
-      "[CONTACT_UNEXPECTED_ERROR]",
+      "[CONTACT_API_ERROR] :",
       error
     );
 
     return NextResponse.json(
       {
         error:
-          "Une erreur serveur inattendue est survenue.",
+          "Une erreur est survenue lors de l'envoi du message.",
       },
       {
         status: 500,
