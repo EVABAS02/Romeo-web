@@ -5,7 +5,6 @@ import {
   initializeApp,
 } from "firebase-admin/app";
 
-import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 
 const projectId =
@@ -55,18 +54,9 @@ const adminApp =
   getFirebaseAdminApp();
 
 /**
- * Firebase Admin Authentication
+ * Firestore Admin uniquement.
  *
- * Utilisé uniquement côté serveur.
- */
-export const adminAuth = adminApp
-  ? getAuth(adminApp)
-  : null;
-
-/**
- * Firebase Admin Firestore
- *
- * Utilisé côté serveur.
+ * Ce module ne charge pas firebase-admin/auth.
  */
 export const adminDb = adminApp
   ? getFirestore(adminApp)

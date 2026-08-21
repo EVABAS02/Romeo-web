@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 
-import { adminDb } from "../../../lib/firebaseAdmin";
+import { adminDb } from "../../../lib/firebaseAdminFirestore";
+
 import {
   contactIpRateLimit,
   contactEmailRateLimit,
@@ -17,9 +18,7 @@ const LIMITS = {
 } as const;
 
 /**
- * ============================================================
- * RÉCUPÉRATION DE L'IP DU VISITEUR
- * ============================================================
+ * Récupère l'adresse IP du visiteur.
  */
 function getClientIp(request: Request): string {
   const forwardedFor =
@@ -45,11 +44,6 @@ function getClientIp(request: Request): string {
   return "unknown";
 }
 
-/**
- * ============================================================
- * POST /api/contact
- * ============================================================
- */
 export async function POST(request: Request) {
   try {
     // ==========================================================
@@ -96,12 +90,6 @@ export async function POST(request: Request) {
         ipRateLimit.reset.toString(),
     };
 
-    /**
-     * Si l'IP dépasse 10 requêtes/minute,
-     * on arrête immédiatement la requête.
-     *
-     * Aucun accès Firestore ne sera effectué.
-     */
     if (!ipRateLimit.success) {
       const retryAfter = Math.max(
         1,
@@ -128,7 +116,7 @@ export async function POST(request: Request) {
     }
 
     // ==========================================================
-    // 2. VÉRIFIER FIREBASE ADMIN
+    // 2. VÉRIFIER FIREBASE ADMIN FIRESTORE
     // ==========================================================
 
     if (!adminDb) {
@@ -149,7 +137,7 @@ export async function POST(request: Request) {
     }
 
     // ==========================================================
-    // 3. LIRE ET CONTRÔLER LE JSON
+    // 3. LIRE LE CORPS JSON
     // ==========================================================
 
     let body: unknown;
@@ -342,13 +330,6 @@ export async function POST(request: Request) {
         emailRateLimit.reset.toString(),
     };
 
-    /**
-     * Si l'adresse a déjà envoyé 20 messages
-     * sur la fenêtre glissante de 24 heures,
-     * on bloque ici.
-     *
-     * Aucun document Firestore n'est créé.
-     */
     if (!emailRateLimit.success) {
       const retryAfter = Math.max(
         1,
@@ -375,7 +356,7 @@ export async function POST(request: Request) {
     }
 
     // ==========================================================
-    // 6. CRÉER LA CONVERSATION FIRESTORE
+    // 6. CRÉER LA CONVERSATION
     // ==========================================================
 
     let conversationRef;
@@ -389,13 +370,10 @@ export async function POST(request: Request) {
             email,
             sujet,
             lastMessage: message,
-
             createdAt:
               FieldValue.serverTimestamp(),
-
             updatedAt:
               FieldValue.serverTimestamp(),
-
             read: false,
           });
     } catch (error) {
