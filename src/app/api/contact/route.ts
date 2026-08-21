@@ -17,7 +17,9 @@ const LIMITS = {
 } as const;
 
 /**
- * Récupère l'adresse IP du visiteur.
+ * ============================================================
+ * RÉCUPÉRATION DE L'IP DU VISITEUR
+ * ============================================================
  */
 function getClientIp(request: Request): string {
   const forwardedFor =
@@ -43,11 +45,16 @@ function getClientIp(request: Request): string {
   return "unknown";
 }
 
+/**
+ * ============================================================
+ * POST /api/contact
+ * ============================================================
+ */
 export async function POST(request: Request) {
   try {
-    // ============================================================
+    // ==========================================================
     // 1. RATE LIMIT PAR IP
-    // ============================================================
+    // ==========================================================
 
     const clientIp = getClientIp(request);
 
@@ -89,6 +96,12 @@ export async function POST(request: Request) {
         ipRateLimit.reset.toString(),
     };
 
+    /**
+     * Si l'IP dépasse 10 requêtes/minute,
+     * on arrête immédiatement la requête.
+     *
+     * Aucun accès Firestore ne sera effectué.
+     */
     if (!ipRateLimit.success) {
       const retryAfter = Math.max(
         1,
@@ -114,9 +127,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // ============================================================
+    // ==========================================================
     // 2. VÉRIFIER FIREBASE ADMIN
-    // ============================================================
+    // ==========================================================
 
     if (!adminDb) {
       console.error(
@@ -135,9 +148,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // ============================================================
-    // 3. LIRE LE CORPS DE LA REQUÊTE
-    // ============================================================
+    // ==========================================================
+    // 3. LIRE ET CONTRÔLER LE JSON
+    // ==========================================================
 
     let body: unknown;
 
@@ -199,9 +212,9 @@ export async function POST(request: Request) {
         ? data.message.trim()
         : "";
 
-    // ============================================================
+    // ==========================================================
     // 4. VALIDATION SERVEUR
-    // ============================================================
+    // ==========================================================
 
     if (
       !nom ||
@@ -284,9 +297,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // ============================================================
+    // ==========================================================
     // 5. RATE LIMIT PAR EMAIL
-    // ============================================================
+    // ==========================================================
 
     let emailRateLimit;
 
@@ -329,6 +342,13 @@ export async function POST(request: Request) {
         emailRateLimit.reset.toString(),
     };
 
+    /**
+     * Si l'adresse a déjà envoyé 20 messages
+     * sur la fenêtre glissante de 24 heures,
+     * on bloque ici.
+     *
+     * Aucun document Firestore n'est créé.
+     */
     if (!emailRateLimit.success) {
       const retryAfter = Math.max(
         1,
@@ -354,9 +374,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // ============================================================
-    // 6. FIRESTORE — CRÉER LA CONVERSATION
-    // ============================================================
+    // ==========================================================
+    // 6. CRÉER LA CONVERSATION FIRESTORE
+    // ==========================================================
 
     let conversationRef;
 
@@ -369,10 +389,13 @@ export async function POST(request: Request) {
             email,
             sujet,
             lastMessage: message,
+
             createdAt:
               FieldValue.serverTimestamp(),
+
             updatedAt:
               FieldValue.serverTimestamp(),
+
             read: false,
           });
     } catch (error) {
@@ -393,9 +416,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // ============================================================
-    // 7. FIRESTORE — PREMIER MESSAGE
-    // ============================================================
+    // ==========================================================
+    // 7. CRÉER LE PREMIER MESSAGE
+    // ==========================================================
 
     try {
       await conversationRef
@@ -424,9 +447,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // ============================================================
+    // ==========================================================
     // 8. SUCCÈS
-    // ============================================================
+    // ==========================================================
 
     return NextResponse.json(
       {
