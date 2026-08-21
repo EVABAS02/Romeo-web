@@ -4,8 +4,8 @@ import { Redis } from "@upstash/redis";
 const redis = Redis.fromEnv();
 
 /**
- * Limite basée sur l'adresse IP.
- * Protège contre les envois massifs et rapides.
+ * Protection contre les envois rapides.
+ * 10 requêtes maximum par minute et par IP.
  */
 export const contactIpRateLimit = new Ratelimit({
   redis,
@@ -14,9 +14,8 @@ export const contactIpRateLimit = new Ratelimit({
 });
 
 /**
- * Limite basée sur l'adresse email.
- * Autorise au maximum 20 messages sur 24 heures
- * pour une même adresse.
+ * Protection contre les abus répartis dans le temps.
+ * 20 messages maximum par 24 heures et par email.
  */
 export const contactEmailRateLimit = new Ratelimit({
   redis,
