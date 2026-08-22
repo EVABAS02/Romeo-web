@@ -4,8 +4,8 @@ import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "../../../lib/firebaseAdminFirestore";
 
 import {
-  contactIpRateLimit,
-  contactEmailRateLimit,
+  getContactIpRateLimit,
+  getContactEmailRateLimit,
 } from "../../../lib/rateLimit";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -52,67 +52,65 @@ export async function POST(request: Request) {
 
     const clientIp = getClientIp(request);
 
-    let ipRateLimit;
+    const contactIpRateLimit =
+      getContactIpRateLimit();
 
-    try {
-      ipRateLimit =
-        await contactIpRateLimit.limit(
-          `contact-ip:${clientIp}`
+    let ipRateLimitHeaders: Record<string, string> = {};
+
+    if (contactIpRateLimit) {
+      try {
+        const ipRateLimit =
+          await contactIpRateLimit.limit(
+            `contact-ip:${clientIp}`
+          );
+
+        ipRateLimitHeaders = {
+          "X-RateLimit-IP-Limit":
+            ipRateLimit.limit.toString(),
+
+          "X-RateLimit-IP-Remaining":
+            Math.max(
+              0,
+              ipRateLimit.remaining
+            ).toString(),
+
+          "X-RateLimit-IP-Reset":
+            ipRateLimit.reset.toString(),
+        };
+
+        if (!ipRateLimit.success) {
+          const retryAfter = Math.max(
+            1,
+            Math.ceil(
+              (ipRateLimit.reset - Date.now()) /
+                1000
+            )
+          );
+
+          return NextResponse.json(
+            {
+              error:
+                "Trop de tentatives. Veuillez patienter avant de réessayer.",
+            },
+            {
+              status: 429,
+              headers: {
+                ...ipRateLimitHeaders,
+                "Retry-After":
+                  retryAfter.toString(),
+              },
+            }
+          );
+        }
+      } catch (error) {
+        console.error(
+          "[RATE_LIMIT_IP_ERROR] Impossible de contacter Upstash :",
+          error
         );
-    } catch (error) {
-      console.error(
-        "[RATE_LIMIT_IP_ERROR] Impossible de contacter Upstash :",
-        error
-      );
 
-      return NextResponse.json(
-        {
-          error:
-            "Le service de protection est temporairement indisponible.",
-        },
-        {
-          status: 503,
-        }
-      );
-    }
-
-    const ipRateLimitHeaders = {
-      "X-RateLimit-IP-Limit":
-        ipRateLimit.limit.toString(),
-
-      "X-RateLimit-IP-Remaining":
-        Math.max(
-          0,
-          ipRateLimit.remaining
-        ).toString(),
-
-      "X-RateLimit-IP-Reset":
-        ipRateLimit.reset.toString(),
-    };
-
-    if (!ipRateLimit.success) {
-      const retryAfter = Math.max(
-        1,
-        Math.ceil(
-          (ipRateLimit.reset - Date.now()) /
-            1000
-        )
-      );
-
-      return NextResponse.json(
-        {
-          error:
-            "Trop de tentatives. Veuillez patienter avant de réessayer.",
-        },
-        {
-          status: 429,
-          headers: {
-            ...ipRateLimitHeaders,
-            "Retry-After":
-              retryAfter.toString(),
-          },
-        }
-      );
+        // On ne bloque pas l'envoi du message
+        // si le service de rate limit est temporairement indisponible.
+      }
     }
 
     // ==========================================================
@@ -289,70 +287,69 @@ export async function POST(request: Request) {
     // 5. RATE LIMIT PAR EMAIL
     // ==========================================================
 
-    let emailRateLimit;
+    const contactEmailRateLimit =
+      getContactEmailRateLimit();
 
-    try {
-      emailRateLimit =
-        await contactEmailRateLimit.limit(
-          `contact-email:${email}`
-        );
-    } catch (error) {
-      console.error(
-        "[RATE_LIMIT_EMAIL_ERROR] Impossible de contacter Upstash :",
-        error
-      );
-
-      return NextResponse.json(
-        {
-          error:
-            "Le service de protection est temporairement indisponible.",
-        },
-        {
-          status: 503,
-          headers: ipRateLimitHeaders,
-        }
-      );
-    }
-
-    const emailRateLimitHeaders = {
+    let emailRateLimitHeaders = {
       ...ipRateLimitHeaders,
-
-      "X-RateLimit-Email-Limit":
-        emailRateLimit.limit.toString(),
-
-      "X-RateLimit-Email-Remaining":
-        Math.max(
-          0,
-          emailRateLimit.remaining
-        ).toString(),
-
-      "X-RateLimit-Email-Reset":
-        emailRateLimit.reset.toString(),
     };
 
-    if (!emailRateLimit.success) {
-      const retryAfter = Math.max(
-        1,
-        Math.ceil(
-          (emailRateLimit.reset - Date.now()) /
-            1000
-        )
-      );
+    if (contactEmailRateLimit) {
+      try {
+        const emailRateLimit =
+          await contactEmailRateLimit.limit(
+            `contact-email:${email}`
+          );
 
-      return NextResponse.json(
-        {
-          error:
-            "Cette adresse email a atteint la limite quotidienne de messages. Veuillez réessayer plus tard.",
-        },
-        {
-          status: 429,
-          headers: {
-            ...emailRateLimitHeaders,
-            "Retry-After":
-              retryAfter.toString(),
-          },
+        emailRateLimitHeaders = {
+          ...ipRateLimitHeaders,
+
+          "X-RateLimit-Email-Limit":
+            emailRateLimit.limit.toString(),
+
+          "X-RateLimit-Email-Remaining":
+            Math.max(
+              0,
+              emailRateLimit.remaining
+            ).toString(),
+
+          "X-RateLimit-Email-Reset":
+            emailRateLimit.reset.toString(),
+        };
+
+        if (!emailRateLimit.success) {
+          const retryAfter = Math.max(
+            1,
+            Math.ceil(
+              (emailRateLimit.reset - Date.now()) /
+                1000
+            )
+          );
+
+          return NextResponse.json(
+            {
+              error:
+                "Cette adresse email a atteint la limite quotidienne de messages. Veuillez réessayer plus tard.",
+            },
+            {
+              status: 429,
+              headers: {
+                ...emailRateLimitHeaders,
+                "Retry-After":
+                  retryAfter.toString(),
+              },
+            }
+          );
         }
-      );
+      } catch (error) {
+        console.error(
+          "[RATE_LIMIT_EMAIL_ERROR] Impossible de contacter Upstash :",
+          error
+        );
+
+        // On ne bloque pas l'envoi du message
+        // si Upstash est temporairement indisponible.
+      }
     }
 
     // ==========================================================
@@ -370,10 +367,13 @@ export async function POST(request: Request) {
             email,
             sujet,
             lastMessage: message,
+
             createdAt:
               FieldValue.serverTimestamp(),
+
             updatedAt:
               FieldValue.serverTimestamp(),
+
             read: false,
           });
     } catch (error) {
@@ -404,6 +404,7 @@ export async function POST(request: Request) {
         .add({
           text: message,
           sender: "client",
+
           createdAt:
             FieldValue.serverTimestamp(),
         });
